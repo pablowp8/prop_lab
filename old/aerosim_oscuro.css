@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400&display=swap');
+
+:root {
+    --bg: #080c12; --panel: #0d1520; --border: #1a3a5c;
+    --accent: #00c8ff; --accent2: #ff6b1a; --accent3: #00ff9d;
+    --warn: #ffcc00; --danger: #ff3b30; --text: #c8dff0;
+    --dim: #4a6a8a;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Barlow Condensed', sans-serif;
+}
+
+body {
+    background: var(--bg) !important;
+    font-family: var(--head);
+    margin: 0;
+}
+
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    background-image:
+        linear-gradient(rgba(0,200,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* ── Navbar ── */
+.aerosim-nav {
+    background: var(--panel) !important;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.aerosim-logo {
+    font-family: var(--head); font-weight: 900; font-size: 22px;
+    letter-spacing: 4px; color: var(--accent); text-transform: uppercase;
+}
+.aerosim-logo span { color: rgba(200,223,240,.4); }
+.nav-badge {
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    border: 1px solid var(--border); padding: 3px 10px; border-radius: 2px;
+}
+.nav-badge.live { border-color: var(--accent3); color: var(--accent3); }
+
+/* ── Metric cards ── */
+.metric-card {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 14px 16px; position: relative; overflow: hidden;
+}
+.metric-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: var(--accent);
+}
+.metric-card.hot::before  { background: var(--accent2); }
+.metric-card.good::before { background: var(--accent3); }
+.metric-card.warn::before { background: var(--warn); }
+
+.metric-label {
+    font-family: var(--head); font-weight: 600; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
+    margin-bottom: 4px;
+}
+.metric-val {
+    font-family: var(--mono); font-size: 26px; color: var(--text); line-height: 1;
+}
+.metric-unit { font-size: 11px; color: var(--dim); margin-left: 3px; }
+
+/* ── Sliders ── */
+.slider-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--dim); margin-bottom: 4px;
+    font-family: var(--head); letter-spacing: 1px;
+}
+.slider-value { font-family: var(--mono); color: var(--accent); }
+
+/* ── Section headers ── */
+.section-head {
+    font-family: var(--head); font-weight: 700; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--accent);
+    border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 14px;
+}
+
+/* ── Alert TIT ── */
+.alert-tit {
+    background: rgba(255,59,48,.12); border: 1px solid var(--danger);
+    color: var(--danger); font-family: var(--mono); font-size: 11px;
+    padding: 8px 14px; margin-bottom: 10px; letter-spacing: 1px;
+}
+
+/* ── Telemetría ── */
+.tele-table { font-family: var(--mono); font-size: 11px; width: 100%; }
+.tele-table td { padding: 4px 8px; border-bottom: 1px solid rgba(26,58,92,.4); }
+.tele-key  { color: var(--dim); }
+.tele-val  { color: var(--accent); text-align: right; }
+.tele-val.hot  { color: var(--accent2); }
+.tele-val.good { color: var(--accent3); }
+.tele-val.warn { color: var(--warn); }
+
+/* ── Graph cards ── */
+.graph-card {
+    background: var(--panel); border: 1px solid var(--border); margin-bottom: 1px;
+}
+
+/* ── Footer ── */
+.sim-footer {
+    background: var(--panel); border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    padding: 6px 20px; display: flex; gap: 24px; align-items: center;
+}
+.sim-footer .lbl { color: var(--accent); margin-right: 4px; }
+
+/* ── Dash slider overrides ── */
+.rc-slider-track  { background: #00c8ff !important; }
+.rc-slider-handle { border-color: #00c8ff !important; background: #00c8ff !important; }
+
+/* ── Engine selector cards ── */
+[id^="engine-card-"]:hover {
+    background: #111d2e !important;
+}
+
+/* ── Menu cards hover ── */
+[id^="menu-card-"]:hover {
+    border-color: #2a5a8c !important;
+    box-shadow: 0 0 24px rgba(0,200,255,0.08) !important;
+}
+
+/* ── Botón seleccionar hover ── */
+[id^="btn-select-"]:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 16px rgba(0,200,255,0.2);
+}
+
+/* ── Botón volver hover ── */
+#btn-back:hover {
+    border-color: #00c8ff !important;
+    color: #00c8ff !important;
+}
+
+/* ── Dropdown dark override ── */
+.Select-control { background: #0d1520 !important; border-color: #1a3a5c !important; }
+.Select-menu-outer { background: #0d1520 !important; border-color: #1a3a5c !important; }
+.Select-option { background: #0d1520 !important; color: #c8dff0 !important; }
+.Select-option:hover { background: #111d2e !important; }
+.Select-value-label { color: #c8dff0 !important; }
+.Select-arrow { border-top-color: #4a6a8a !important; }

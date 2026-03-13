@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Encode+Sans+Condensed:wght@300;400;600;700;900&family=Encode+Sans:wght@300;400&display=swap');
+
+/* ══════════════════════════════════════════════════════
+   AEROSIM — TEMA TÉCNICO CLARO
+   Estética: Plano de ingeniería aeronáutica
+   Paleta:   Papel verjurado · Azul prusia · Tinta seca
+   Fuentes:  DM Mono (datos) · Encode Sans Condensed (UI)
+   ══════════════════════════════════════════════════════ */
+
+:root {
+    --bg:      #edeae4;
+    --bg2:     #e4e0d8;
+    --panel:   #f5f3ef;
+    --panel2:  #ebe7e0;
+    --border:  #c8beb4;
+    --border2: #a89e94;
+    --grid:    rgba(26,55,110,0.06);
+    --text:    #18243c;
+    --text2:   #2e4060;
+    --dim:     #6e82a0;
+    --dim2:    #a09080;
+    --accent:  #1a4d8f;
+    --accent2: #b83232;
+    --accent3: #1a6644;
+    --warn:    #9c4d00;
+    --danger:  #8b1a1a;
+    --mono: 'DM Mono', monospace;
+    --head: 'Encode Sans Condensed', sans-serif;
+    --body: 'Encode Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    background: var(--bg) !important;
+    font-family: var(--body);
+    margin: 0;
+    color: var(--text);
+}
+
+/* Cuadrícula de papel milimetrado (líneas principales + subdivisión) */
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(rgba(26,55,110,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(26,55,110,0.02) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+}
+
+/* ── Navbar ── */
+.aerosim-nav {
+    background: var(--panel) !important;
+    border-bottom: 2px solid var(--accent);
+    padding: 0 24px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 10;
+    box-shadow: 0 2px 8px rgba(26,55,110,0.10);
+}
+.aerosim-logo {
+    font-family: var(--head); font-weight: 900; font-size: 20px;
+    letter-spacing: 5px; color: var(--accent); text-transform: uppercase;
+}
+.nav-badge {
+    font-family: var(--mono); font-size: 10px; color: var(--dim);
+    border: 1px solid var(--border2); padding: 3px 10px; border-radius: 1px;
+    background: var(--panel2); letter-spacing: 1px;
+}
+.nav-badge.live {
+    border-color: var(--accent3); color: var(--accent3);
+    background: rgba(26,102,68,0.07);
+}
+
+/* ── Metric cards ── */
+.metric-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    padding: 12px 14px;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(26,36,60,0.07);
+}
+.metric-card::before { display: none; }
+.metric-card.hot  { border-top-color: var(--accent2); }
+.metric-card.good { border-top-color: var(--accent3); }
+.metric-card.warn { border-top-color: var(--warn); }
+/* Marca de registro en esquina inferior derecha */
+.metric-card::after {
+    content: '';
+    position: absolute; bottom: 5px; right: 5px;
+    width: 8px; height: 8px;
+    border-right: 1px solid var(--border2);
+    border-bottom: 1px solid var(--border2);
+}
+.metric-label {
+    font-family: var(--head); font-weight: 700; font-size: 9px;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
+    margin-bottom: 4px;
+}
+.metric-val {
+    font-family: var(--mono); font-size: 24px;
+    color: var(--text); line-height: 1; font-weight: 500;
+}
+.metric-unit {
+    font-size: 10px; color: var(--dim2); margin-left: 3px;
+    font-family: var(--mono); font-weight: 300;
+}
+
+/* ── Section headers ── */
+.section-head {
+    font-family: var(--head); font-weight: 900; font-size: 9px;
+    letter-spacing: 4px; text-transform: uppercase; color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px; margin-bottom: 12px;
+}
+
+/* ── Alert TIT ── */
+.alert-tit {
+    background: rgba(139,26,26,0.05);
+    border: 1px solid rgba(139,26,26,0.25);
+    border-left: 3px solid var(--danger);
+    color: var(--danger);
+    font-family: var(--mono); font-size: 10px;
+    padding: 8px 14px; margin-bottom: 10px; letter-spacing: 1px;
+}
+
+/* ── Telemetría ── */
+.tele-table {
+    font-family: var(--mono); font-size: 10px;
+    width: 100%; border-collapse: collapse;
+}
+.tele-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(200,190,180,0.7);
+}
+.tele-key  { color: var(--dim); font-weight: 300; }
+.tele-val  { color: var(--accent); text-align: right; font-weight: 500; }
+.tele-val.hot  { color: var(--accent2); }
+.tele-val.good { color: var(--accent3); }
+.tele-val.warn { color: var(--warn); }
+
+/* ── Graph cards ── */
+.graph-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    margin-bottom: 1px;
+    box-shadow: 0 1px 3px rgba(26,36,60,0.05);
+}
+
+/* ── Footer ── */
+.sim-footer {
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 9px; color: var(--dim);
+    padding: 6px 20px; display: flex; gap: 24px; align-items: center;
+    letter-spacing: 1px;
+}
+.sim-footer .lbl { color: var(--accent); margin-right: 4px; font-weight: 500; }
+
+/* ── Botón volver ── */
+#btn-back {
+    background: transparent !important;
+    border: 1px solid var(--border2) !important;
+    color: var(--dim) !important;
+    font-family: var(--head) !important; font-weight: 700 !important;
+    font-size: 10px !important; letter-spacing: 2px !important;
+    padding: 4px 12px !important; cursor: pointer !important;
+    transition: all 0.15s !important;
+}
+#btn-back:hover {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    background: rgba(26,77,143,0.05) !important;
+}
+
+/* ── Botones seleccionar ── */
+[id^="btn-select-"] { transition: all 0.15s !important; }
+[id^="btn-select-"]:hover {
+    opacity: 0.85;
+    box-shadow: 0 2px 12px rgba(26,55,110,0.18) !important;
+}
+
+/* ── Tarjetas menú hover ── */
+[id^="menu-card-"] { transition: box-shadow 0.2s, border-color 0.2s !important; }
+[id^="menu-card-"]:hover {
+    box-shadow: 0 6px 24px rgba(26,55,110,0.12) !important;
+    border-color: var(--border2) !important;
+}
+
+/* ── Sliders Dash ── */
+.rc-slider-track  { background: var(--accent) !important; }
+.rc-slider-handle {
+    border-color: var(--accent) !important;
+    background: var(--panel) !important;
+    box-shadow: 0 0 0 2px rgba(26,77,143,0.15) !important;
+}
+.rc-slider-rail { background: var(--border) !important; }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }

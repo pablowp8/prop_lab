@@ -1,0 +1,7 @@
+prop_lab_venv/
+__pycache__/
+*.pyc
+.env
+instance/
+*.db
+.vscode/

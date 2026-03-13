@@ -1,6 +1,6 @@
 """
 components.py — Física de aerorreactores
-===============================================
+===================================================
 Clases de componentes y motores. Cada motor expone:
 
     resultado = Motor().simulate(T_amb, P_amb, mach, G, *params_motor)

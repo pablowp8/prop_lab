@@ -4,7 +4,7 @@ Pantalla 1 : Menú de selección de motor
 Pantalla 2 : Simulador (sliders · métricas · esquema SVG · gráficas · telemetría)
 
 Física delegada a simulation.py → components.py
-Ejecución:  python app.py
+Ejecución:  python app.py hola
 Producción: gunicorn app:server --workers 4 --threads 4 --bind 0.0.0.0:8050
 """
 

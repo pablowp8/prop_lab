@@ -47,69 +47,90 @@ C = {
 
 ENGINE_CONFIGS = {
     "OneSpoolEngine": {
-        "label":    "Aerorreactor Monoeje",
+        "label":    "Turbojet Monoeje",
         "subtitle": "Single Spool Turbojet",
         "icon":     "◈",
         "color":    "#1a4d8f",
         "specs": [("Ejes","1"),("Aplicacion","Caza / Misil"),("Mach max","2.5+"),("OPR tipico","10–20")],
-        "desc": "Un único eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
-        "sliders": [
-            ("os_alt",  "Altitud [m]",         0,    12000, 0,    100),
-            ("os_t0",   "Temperatura T0 [C]",  -70,  50,    15,   1),
-            ("os_mach", "Mach",                0,    2.5,   0,    0.01),
-            ("os_G",    "Flujo masico [kg/s]", 5,    200,   20,   1),
-            ("os_pi",   "OPR compresor",       2,    30,    10,   0.1),
-            ("os_tit",  "TIT [K]",             800,  1800,  1400, 5),
-            ("os_ec",   "eta compresor",       0.6,  0.99,  0.80, 0.01),
-            ("os_et",   "eta turbina",         0.6,  0.99,  0.88, 0.01),
+        "desc": "Un unico eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
+        # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
+        "sliders_vuelo": [
+            ("os_t0",   "T\u2080 [°C]",   -70,  50,    15,   1),
+            ("os_p0",   "P\u2080 [kPa]",   20,  105,  101.3, 0.1),
+            ("os_mach", "M\u2080",           0,  2.5,    0,   0.01),
+        ],
+        # ── Sección 2: Punto de diseño ───────────────────────────────────────
+        "sliders_diseno": [
+            ("os_tit",  "T\u2084t [K]",   800, 1800, 1400,  5),
+            ("os_G",    "G [kg/s]",         5,  200,   20,   1),
+            ("os_pi",   "\u03C0\u2082\u2083",  2,   30,   10,  0.1),
+        ],
+        # ── Sección 3: Componentes ───────────────────────────────────────────
+        "sliders_comp": [
+            ("os_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
+            ("os_ec",    "\u03B7 compresor",  0.6, 0.99, 0.80, 0.01),
+            ("os_ecc",   "\u03B7 camara",     0.6, 0.99, 0.99, 0.01),
+            ("os_et",    "\u03B7 turbina",    0.6, 0.99, 0.88, 0.01),
+            ("os_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine,
         "runner": lambda p: sim.OneSpoolEngine().simulate(
-            *sim.isa_atmosphere(p["os_alt"], p["os_t0"]),
+            p["os_t0"] + 273.15, p["os_p0"] * 1000,
             p["os_mach"], p["os_G"], p["os_pi"], p["os_tit"],
-            eta_c=p["os_ec"], eta_t=p["os_et"],
+            eta_dif=p["os_edif"], eta_c=p["os_ec"], eta_cc=p["os_ecc"],
+            eta_t=p["os_et"], eta_noz=p["os_enoz"],
         ),
         "sweep_base": lambda p: {
+            "T_amb": p["os_t0"] + 273.15, "P_amb": p["os_p0"] * 1000,
             "mach":p["os_mach"], "G":p["os_G"],
             "pi_23":p["os_pi"],  "tit":p["os_tit"],
-            "eta_c":p["os_ec"],  "eta_t":p["os_et"],
-            **dict(zip(["T_amb","P_amb"], sim.isa_atmosphere(p["os_alt"], p["os_t0"]))),
+            "eta_dif":p["os_edif"], "eta_c":p["os_ec"], "eta_cc":p["os_ecc"],
+            "eta_t":p["os_et"],  "eta_noz":p["os_enoz"],
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Aerorreactor Bieje",
+        "label":    "Turbojet Bieje",
         "subtitle": "Twin Spool Turbojet",
         "icon":     "⬡",
         "color":    "#b83232",
         "specs": [("Ejes","2 (LP + HP)"),("Aplicacion","Militar / Civil"),("Mach max","2.0+"),("OPR tipico","15–30")],
         "desc": "Dos ejes independientes LP y HP permiten optimizar la velocidad de cada etapa de compresion, mejorando rendimiento y estabilidad.",
-        "sliders": [
-            ("ts_alt",   "Altitud [m]",         0,    12000, 0,     100),
-            ("ts_t0",    "Temperatura T0 [C]",  -70,  50,    15,    1),
-            ("ts_mach",  "Mach",                0,    2.5,   0,     0.01),
-            ("ts_G",     "Flujo masico [kg/s]", 5,    200,   20,    1),
-            ("ts_pilpc", "OPR compresor LP",    1.1,  6,     1.6,   0.1),
-            ("ts_pihpc", "OPR compresor HP",    2,    25,    12,    0.1),
-            ("ts_tit",   "TIT [K]",             800,  1900,  1450,  5),
-            ("ts_elpc",  "eta comp. LP",        0.6,  0.99,  0.91,  0.01),
-            ("ts_ehpc",  "eta comp. HP",        0.6,  0.99,  0.85,  0.01),
-            ("ts_elpt",  "eta turb. LP",        0.6,  0.99,  0.94,  0.01),
-            ("ts_ehpt",  "eta turb. HP",        0.6,  0.99,  0.92,  0.01),
+        "sliders_vuelo": [
+            ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
+            ("ts_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("ts_mach", "M\u2080",          0,  2.5,   0,  0.01),
+        ],
+        "sliders_diseno": [
+            ("ts_tit",   "T\u2084t [K]",        800, 1900, 1450,  5),
+            ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
+            ("ts_pilpc", "\u03C0\u2090 (LP)",    1.1,    6,  1.6, 0.1),
+            ("ts_pihpc", "\u03C0\u1D47 (HP)",      2,   25,   12, 0.1),
+        ],
+        "sliders_comp": [
+            ("ts_edif",  "\u03B7 difusor",     0.6, 0.99, 0.99, 0.01),
+            ("ts_elpc",  "\u03B7 comp. LP",    0.6, 0.99, 0.91, 0.01),
+            ("ts_ehpc",  "\u03B7 comp. HP",    0.6, 0.99, 0.85, 0.01),
+            ("ts_ecc",   "\u03B7 camara",      0.6, 0.99, 0.99, 0.01),
+            ("ts_ehpt",  "\u03B7 turb. HP",    0.6, 0.99, 0.92, 0.01),
+            ("ts_elpt",  "\u03B7 turb. LP",    0.6, 0.99, 0.94, 0.01),
+            ("ts_enoz",  "\u03B7 tobera",      0.6, 0.99, 0.99, 0.01),
         ],
         "engine_cls": sim.TwinSpoolEngine,
         "runner": lambda p: sim.TwinSpoolEngine().simulate(
-            *sim.isa_atmosphere(p["ts_alt"], p["ts_t0"]),
+            p["ts_t0"] + 273.15, p["ts_p0"] * 1000,
             p["ts_mach"], p["ts_G"],
             p["ts_pilpc"], p["ts_pihpc"], p["ts_tit"],
-            eta_lpc=p["ts_elpc"], eta_hpc=p["ts_ehpc"],
-            eta_lpt=p["ts_elpt"], eta_hpt=p["ts_ehpt"],
+            eta_dif=p["ts_edif"], eta_lpc=p["ts_elpc"], eta_hpc=p["ts_ehpc"],
+            eta_cc=p["ts_ecc"], eta_lpt=p["ts_elpt"], eta_hpt=p["ts_ehpt"],
+            eta_noz=p["ts_enoz"],
         ),
         "sweep_base": lambda p: {
-            "mach":p["ts_mach"],   "G":p["ts_G"],
-            "pi_lpc":p["ts_pilpc"],"pi_hpc":p["ts_pihpc"], "tit":p["ts_tit"],
-            "eta_lpc":p["ts_elpc"],"eta_hpc":p["ts_ehpc"],
-            "eta_lpt":p["ts_elpt"],"eta_hpt":p["ts_ehpt"],
-            **dict(zip(["T_amb","P_amb"], sim.isa_atmosphere(p["ts_alt"], p["ts_t0"]))),
+            "T_amb": p["ts_t0"] + 273.15, "P_amb": p["ts_p0"] * 1000,
+            "mach":p["ts_mach"],    "G":p["ts_G"],
+            "pi_lpc":p["ts_pilpc"], "pi_hpc":p["ts_pihpc"], "tit":p["ts_tit"],
+            "eta_dif":p["ts_edif"], "eta_lpc":p["ts_elpc"], "eta_hpc":p["ts_ehpc"],
+            "eta_cc":p["ts_ecc"],   "eta_lpt":p["ts_elpt"], "eta_hpt":p["ts_ehpt"],
+            "eta_noz":p["ts_enoz"],
         },
     },
     "SingleFlowTurbofan": {
@@ -119,76 +140,93 @@ ENGINE_CONFIGS = {
         "color":    "#1a6644",
         "specs": [("Ejes","2 (Fan + HP)"),("Aplicacion","Aviacion comercial"),("Mach max","0.9"),("BPR tipico","0.5–1.5")],
         "desc": "El fan comprime flujo primario y secundario. La turbina LP mueve el fan y la HP el compresor de nucleo. Optimo para aviacion subsonica.",
-        "sliders": [
-            ("tf_alt",   "Altitud [m]",              0,    12000, 0,    100),
-            ("tf_t0",    "Temperatura T0 [C]",       -70,  50,    15,   1),
-            ("tf_mach",  "Mach",                     0,    1.0,   0,    0.01),
-            ("tf_G",     "Flujo masico total [kg/s]",10,   500,   90,   5),
-            ("tf_pi",    "OPR nucleo",               2,    40,    25,   0.1),
-            ("tf_tit",   "TIT [K]",                  800,  2000,  1500, 5),
-            ("tf_pifan", "OPR fan",                  1.1,  3.0,   1.4,  0.05),
-            ("tf_bpr",   "Bypass Ratio",             0.1,  12,    0.8,  0.1),
-            ("tf_ec",    "eta nucleo",               0.6,  0.99,  1.0,  0.01),
-            ("tf_efan",  "eta fan",                  0.6,  0.99,  1.0,  0.01),
-            ("tf_ehpt",  "eta turb. HP",             0.6,  0.99,  1.0,  0.01),
-            ("tf_elpt",  "eta turb. LP",             0.6,  0.99,  1.0,  0.01),
+        "sliders_vuelo": [
+            ("tf_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
+            ("tf_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("tf_mach", "M\u2080",          0,  1.0,   0,  0.01),
+        ],
+        "sliders_diseno": [
+            ("tf_tit",   "T\u2084t [K]",          800, 2000, 1500,  5),
+            ("tf_G",     "G [kg/s]",                10,  500,   90,  5),
+            ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
+            ("tf_pi",    "\u03C0\u2082\u2083 nucleo", 2,   40,   25, 0.1),
+        ],
+        "sliders_comp": [
+            ("tf_edif",  "\u03B7 difusor",   0.6, 0.99, 0.99, 0.01),
+            ("tf_efan",  "\u03B7 fan",       0.6, 0.99, 1.0,  0.01),
+            ("tf_ec",    "\u03B7 compresor", 0.6, 0.99, 1.0,  0.01),
+            ("tf_ecc",   "\u03B7 camara",    0.6, 0.99, 0.99, 0.01),
+            ("tf_ehpt",  "\u03B7 turb. HP",  0.6, 0.99, 1.0,  0.01),
+            ("tf_elpt",  "\u03B7 turb. LP",  0.6, 0.99, 1.0,  0.01),
+            ("tf_enoz",  "\u03B7 tobera",    0.6, 0.99, 0.99, 0.01),
+            ("tf_bpr",   "\u039B (BPR)",     0.1,  12,  0.8,  0.1),
         ],
         "engine_cls": sim.SingleFlowTurbofan,
         "runner": lambda p: sim.SingleFlowTurbofan().simulate(
-            *sim.isa_atmosphere(p["tf_alt"], p["tf_t0"]),
+            p["tf_t0"] + 273.15, p["tf_p0"] * 1000,
             p["tf_mach"], p["tf_G"], p["tf_pi"], p["tf_tit"],
             p["tf_pifan"], p["tf_bpr"],
             eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
             eta_hpt=p["tf_ehpt"], eta_lpt=p["tf_elpt"],
         ),
         "sweep_base": lambda p: {
-            "mach":p["tf_mach"],   "G":p["tf_G"],
-            "pi_23":p["tf_pi"],    "tit":p["tf_tit"],
-            "pi_fan":p["tf_pifan"],"bpr":p["tf_bpr"],
-            "eta_c":p["tf_ec"],    "eta_fan":p["tf_efan"],
-            "eta_hpt":p["tf_ehpt"],"eta_lpt":p["tf_elpt"],
-            **dict(zip(["T_amb","P_amb"], sim.isa_atmosphere(p["tf_alt"], p["tf_t0"]))),
+            "T_amb": p["tf_t0"] + 273.15, "P_amb": p["tf_p0"] * 1000,
+            "mach":p["tf_mach"],    "G":p["tf_G"],
+            "pi_23":p["tf_pi"],     "tit":p["tf_tit"],
+            "pi_fan":p["tf_pifan"], "bpr":p["tf_bpr"],
+            "eta_c":p["tf_ec"],     "eta_fan":p["tf_efan"],
+            "eta_hpt":p["tf_ehpt"], "eta_lpt":p["tf_elpt"],
         },
     },
     "OneSpoolTurboprop": {
         "label":    "Turboprop",
         "subtitle": "Single Spool Turboprop",
         "icon":     "✦",
-        "color":    "#772aa1",
+        "color":    "#9c4d00",
         "specs": [("Ejes","2 (HP + LP)"),("Aplicacion","Regional / Carga"),("Mach max","0.6"),("OPR tipico","10–25")],
         "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
-        "sliders": [
-            ("tp_alt",  "Altitud [m]",         0,    8000,  0,     100),
-            ("tp_t0",   "Temperatura T0 [C]",  -50,  50,    15,    1),
-            ("tp_mach", "Mach",                0,    0.7,   0,     0.01),
-            ("tp_G",    "Flujo masico [kg/s]", 5,    200,   90,    1),
-            ("tp_pi",   "OPR compresor",       2,    30,    25,    0.1),
-            ("tp_tit",  "TIT [K]",             800,  1700,  1500,  5),
-            ("tp_Wh",   "Potencia eje [kW]",   10,   2000,  200,   10),
-            ("tp_etam", "eta mecanica",         0.5,  0.99,  0.70,  0.01),
-            ("tp_ec",   "eta compresor",        0.6,  0.99,  1.0,   0.01),
-            ("tp_ehpt", "eta turb. HP",         0.6,  0.99,  1.0,   0.01),
-            ("tp_elpt", "eta turb. LP",         0.6,  0.99,  1.0,   0.01),
+        "sliders_vuelo": [
+            ("tp_t0",   "T\u2080 [°C]",  -50,  50,  15,   1),
+            ("tp_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("tp_mach", "M\u2080",          0,  0.7,  0,  0.01),
+        ],
+        "sliders_diseno": [
+            ("tp_tit",  "T\u2084t [K]",          800, 1700, 1500,  5),
+            ("tp_G",    "G [kg/s]",                 5,  200,   90,  1),
+            ("tp_pi",   "\u03C0\u2082\u2083",       2,   30,   25, 0.1),
+        ],
+        "sliders_comp": [
+            ("tp_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
+            ("tp_ec",    "\u03B7 compresor",  0.6, 0.99, 1.0,  0.01),
+            ("tp_ecc",   "\u03B7 camara",     0.6, 0.99, 0.99, 0.01),
+            ("tp_ehpt",  "\u03B7 turb. HP",   0.6, 0.99, 1.0,  0.01),
+            ("tp_elpt",  "\u03B7 turb. LP",   0.6, 0.99, 1.0,  0.01),
+            ("tp_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
+            ("tp_Wh",    "W\u2095 [kW]",       10, 2000,  200, 10),
+            ("tp_etam",  "\u03B7 mecanica",   0.5, 0.99, 0.70, 0.01),
         ],
         "engine_cls": sim.OneSpoolTurboprop,
         "runner": lambda p: sim.OneSpoolTurboprop().simulate(
-            *sim.isa_atmosphere(p["tp_alt"], p["tp_t0"]),
+            p["tp_t0"] + 273.15, p["tp_p0"] * 1000,
             p["tp_mach"], p["tp_G"], p["tp_pi"], p["tp_tit"],
             p["tp_Wh"] * 1000, p["tp_etam"],
             eta_c=p["tp_ec"], eta_hpt=p["tp_ehpt"], eta_lpt=p["tp_elpt"],
         ),
         "sweep_base": lambda p: {
-            "mach":p["tp_mach"], "G":p["tp_G"],
-            "pi_23":p["tp_pi"],  "tit":p["tp_tit"],
+            "T_amb": p["tp_t0"] + 273.15, "P_amb": p["tp_p0"] * 1000,
+            "mach":p["tp_mach"],  "G":p["tp_G"],
+            "pi_23":p["tp_pi"],   "tit":p["tp_tit"],
             "W_h":p["tp_Wh"]*1000, "eta_m":p["tp_etam"],
-            "eta_c":p["tp_ec"],  "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
-            **dict(zip(["T_amb","P_amb"], sim.isa_atmosphere(p["tp_alt"], p["tp_t0"]))),
+            "eta_c":p["tp_ec"],   "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
         },
     },
 }
 
 ALL_SLIDER_IDS = [
-    sid for cfg in ENGINE_CONFIGS.values() for sid, *_ in cfg["sliders"]
+    sid
+    for cfg in ENGINE_CONFIGS.values()
+    for section in ("sliders_vuelo", "sliders_diseno", "sliders_comp")
+    for sid, *_ in cfg[section]
 ]
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -498,10 +536,27 @@ menu_screen = html.Div([
 #  PANTALLA 2 — SIMULADOR
 # ══════════════════════════════════════════════════════════════════════════════
 
+def section_head(title):
+    """Cabecera de sección dentro del panel de sliders."""
+    return html.Div(title, style={
+        "fontSize":"8px", "fontFamily":C["head"], "fontWeight":"700",
+        "letterSpacing":"3px", "textTransform":"uppercase",
+        "color":C["border2"], "padding":"10px 0 4px 0",
+        "borderTop":f"1px solid {C['border']}", "marginTop":"6px",
+    })
+
 all_slider_groups = []
+SECTION_LABELS = {
+    "sliders_vuelo":  "COND. VUELO",
+    "sliders_diseno": "PTO. DISEÑO",
+    "sliders_comp":   "COMPONENTES",
+}
 for eid, cfg in ENGINE_CONFIGS.items():
-    group = [make_slider(sid, lbl, mn, mx, dfl, stp)
-             for sid, lbl, mn, mx, dfl, stp in cfg["sliders"]]
+    group = []
+    for section_key, section_title in SECTION_LABELS.items():
+        group.append(section_head(section_title))
+        for sid, lbl, mn, mx, dfl, stp in cfg[section_key]:
+            group.append(make_slider(sid, lbl, mn, mx, dfl, stp))
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
 
 PANEL_L = {"background":C["panel"],"borderRight":f"1px solid {C['border']}",
@@ -518,8 +573,8 @@ sim_screen = html.Div([
     html.Div([
         html.Div([
             html.Button("← MENU", id="btn-back", n_clicks=0),
-            html.Span("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                         "fontSize":"25px","letterSpacing":"5px",
+            html.Span("AEROSIM", style={"fontFamily":C["head"],"fontWeight":"900",
+                                         "fontSize":"18px","letterSpacing":"5px",
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
@@ -650,6 +705,14 @@ def navigate(*args):
     )
 
 
+# Mapa sid → step, para decidir el formato del label
+_SLIDER_STEP = {
+    sid: stp
+    for cfg in ENGINE_CONFIGS.values()
+    for section in ("sliders_vuelo", "sliders_diseno", "sliders_comp")
+    for sid, _, _, _, _, stp in cfg[section]
+}
+
 @app.callback(
     *[Output(f"val-{sid}", "children") for sid in ALL_SLIDER_IDS],
     *[Input(f"sl-{sid}",   "value")    for sid in ALL_SLIDER_IDS],
@@ -659,12 +722,13 @@ def update_labels(*vals):
     for sid, v in zip(ALL_SLIDER_IDS, vals):
         if v is None:
             out.append(""); continue
-        if any(x in sid for x in ["mach","_ec","_et","efan","ehpt","elpt","elpc","ehpc","etam"]):
+        stp = _SLIDER_STEP.get(sid, 1)
+        if stp >= 1:          # enteros (T en K, G, W_h, T0 en C)
+            out.append(f"{v:.0f}")
+        elif stp >= 0.1:      # un decimal (OPR, BPR, P0)
+            out.append(f"{v:.1f}")
+        else:                 # dos decimales (Mach, etas)
             out.append(f"{v:.2f}")
-        elif any(x in sid for x in ["tit","alt"]):
-            out.append(f"{int(v):,}")
-        else:
-            out.append(f"{v:.2f}" if v < 100 else f"{v:.1f}")
     return out
 
 
@@ -694,11 +758,12 @@ def run_simulation(engine_type, *all_vals):
     cfg   = ENGINE_CONFIGS[engine_type]
     color = cfg["color"]
 
-    # Parámetros del motor activo
+    # Parámetros del motor activo — recorre las 3 secciones
     p = {}
-    for sid, _, _, _, default, _ in cfg["sliders"]:
-        idx  = ALL_SLIDER_IDS.index(sid)
-        p[sid] = all_vals[idx] if all_vals[idx] is not None else default
+    for section in ("sliders_vuelo", "sliders_diseno", "sliders_comp"):
+        for sid, _, _, _, default, _ in cfg[section]:
+            idx = ALL_SLIDER_IDS.index(sid)
+            p[sid] = all_vals[idx] if all_vals[idx] is not None else default
 
     # Error path: devuelve exactamente 15 valores (7 métricas + 4 figs + tabla + msg + style + diagram)
     def _err(msg_str):

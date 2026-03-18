@@ -19,7 +19,7 @@ import simulation as sim
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    title="AeroSim",
+    title="PROP-Lab",
     suppress_callback_exceptions=True,
 )
 server = app.server
@@ -47,12 +47,10 @@ C = {
 
 ENGINE_CONFIGS = {
     "OneSpoolEngine": {
-        "label":    "Turbojet Monoeje",
+        "label":    "Aerorreactor Monoeje",
         "subtitle": "Single Spool Turbojet",
-        "icon":     "◈",
         "color":    "#1a4d8f",
-        "specs": [("Ejes","1"),("Aplicacion","Caza / Misil"),("Mach max","2.5+"),("OPR tipico","10–20")],
-        "desc": "Un unico eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
+        "specs": [("Ejes","1"),("Aplicacion","Caza / Misil")],
         "sliders": [
             ("os_alt",  "Altitud [m]",         0,    12000, 0,    100),
             ("os_t0",   "Temperatura T0 [C]",  -70,  50,    15,   1),
@@ -77,12 +75,10 @@ ENGINE_CONFIGS = {
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Turbojet Bieje",
+        "label":    "Aerorreactor Bieje",
         "subtitle": "Twin Spool Turbojet",
-        "icon":     "⬡",
         "color":    "#b83232",
-        "specs": [("Ejes","2 (LP + HP)"),("Aplicacion","Militar / Civil"),("Mach max","2.0+"),("OPR tipico","15–30")],
-        "desc": "Dos ejes independientes LP y HP permiten optimizar la velocidad de cada etapa de compresion, mejorando rendimiento y estabilidad.",
+        "specs": [("Ejes","2 (LP + HP)"),("Aplicacion","Militar / Civil")],
         "sliders": [
             ("ts_alt",   "Altitud [m]",         0,    12000, 0,     100),
             ("ts_t0",    "Temperatura T0 [C]",  -70,  50,    15,    1),
@@ -115,10 +111,8 @@ ENGINE_CONFIGS = {
     "SingleFlowTurbofan": {
         "label":    "Turbofan",
         "subtitle": "Single Flow Turbofan",
-        "icon":     "⊕",
         "color":    "#1a6644",
-        "specs": [("Ejes","2 (Fan + HP)"),("Aplicacion","Aviacion comercial"),("Mach max","0.9"),("BPR tipico","0.5–1.5")],
-        "desc": "El fan comprime flujo primario y secundario. La turbina LP mueve el fan y la HP el compresor de nucleo. Optimo para aviacion subsonica.",
+        "specs": [("Ejes","2 (Fan + HP)"),("Aplicacion","Aviacion comercial")],
         "sliders": [
             ("tf_alt",   "Altitud [m]",              0,    12000, 0,    100),
             ("tf_t0",    "Temperatura T0 [C]",       -70,  50,    15,   1),
@@ -153,10 +147,8 @@ ENGINE_CONFIGS = {
     "OneSpoolTurboprop": {
         "label":    "Turboprop",
         "subtitle": "Single Spool Turboprop",
-        "icon":     "✦",
-        "color":    "#9c4d00",
-        "specs": [("Ejes","2 (HP + LP)"),("Aplicacion","Regional / Carga"),("Mach max","0.6"),("OPR tipico","10–25")],
-        "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
+        "color":    "#772aa1",
+        "specs": [("Ejes","2 (HP + LP)"),("Aplicacion","Regional / Carga")],
         "sliders": [
             ("tp_alt",  "Altitud [m]",         0,    8000,  0,     100),
             ("tp_t0",   "Temperatura T0 [C]",  -50,  50,    15,    1),
@@ -411,10 +403,10 @@ def build_engine_diagram(engine_type, df):
     )
 
     return dcc.Graph(
-        figure=fig,
-        config={"displayModeBar": False, "staticPlot": True},
-        style={"height":"110px"},
-    )
+    figure=fig,
+    config={"displayModeBar": False, "staticPlot": True},
+    style={"height": "100%", "width": "100%"},
+)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -422,35 +414,32 @@ def build_engine_diagram(engine_type, df):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def menu_engine_card(eid, cfg):
-    specs = [
-        html.Div([
-            html.Span(k, style={"display":"block","color":C["dim"],"fontSize":"8px",
-                                "fontFamily":C["head"],"letterSpacing":"3px",
-                                "textTransform":"uppercase","marginBottom":"1px"}),
-            html.Span(v, style={"color":C["text"],"fontSize":"13px","fontFamily":C["mono"]}),
+    specs = html.Div(
+    [html.Div([
+            html.Span(k, style={"display":"block","color":C["dim"],"fontSize":"20px",
+                                "fontFamily":C["head"],"letterSpacing":"3px","textTransform":"uppercase",
+                "marginBottom":"1px"}),
+            html.Span(v, style={"color":C["text"],"fontSize":"25px","fontFamily":C["mono"]}),
         ], style={"marginBottom":"10px"})
-        for k, v in cfg["specs"]
-    ]
+        for k, v in cfg["specs"]],
+    style={"display": "grid","gridTemplateColumns": "1fr 1fr",
+        "columnGap": "40px","rowGap": "10px"})
     return html.Div([
         html.Div(style={"height":"3px","background":cfg["color"],"marginBottom":"18px"}),
-        html.Div(cfg["icon"], style={"fontSize":"30px","color":cfg["color"],
-                                     "display":"block","marginBottom":"10px","lineHeight":"1"}),
-        html.Div(cfg["label"], style={"fontFamily":C["head"],"fontWeight":"900","fontSize":"18px",
+        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"30px",
                                        "letterSpacing":"2px","textTransform":"uppercase",
-                                       "color":C["text"],"marginBottom":"2px"}),
-        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"9px",
+                                       "color":C["text"],"marginBottom":"2px","color":cfg["color"]}),
+        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"18px",
                                           "color":cfg["color"],"letterSpacing":"2px",
                                           "marginBottom":"12px"}),
-        html.P(cfg["desc"], style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"12px",
-                                    "color":C["dim"],"lineHeight":"1.6","marginBottom":"16px"}),
         html.Div(specs, style={"borderTop":f"1px solid {C['border']}",
-                                "paddingTop":"12px","marginBottom":"16px"}),
+                                "paddingTop":"12px","marginBottom":"16px"}),                   
         html.Button("SELECCIONAR  →", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",
-            "fontSize":"10px","letterSpacing":"3px","padding":"8px 0",
-            "cursor":"pointer","width":"100%","textTransform":"uppercase",
-        }),
+            "fontSize":"15px","letterSpacing":"3px","padding":"8px 0",
+            "cursor":"pointer","width":"100%","textTransform":"uppercase",}),
+        
     ], id=f"menu-card-{eid}", style={
         "background":C["panel"],"border":f"1px solid {C['border']}",
         "padding":"22px 20px","height":"100%",
@@ -465,28 +454,28 @@ menu_screen = html.Div([
             "marginBottom":"48px",
         }),
         html.Div([
-            html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
-                                                "color":C["border2"],"letterSpacing":"4px",
-                                                "marginBottom":"10px"}),
-            html.Div("AEROSIM", style={"fontFamily":C["head"],"fontWeight":"900",
-                                        "fontSize":"52px","letterSpacing":"14px",
-                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px"}),
+            #html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
+            #                                    "color":C["border2"],"letterSpacing":"4px",
+            #                                    "marginBottom":"10px"}),
+            html.Div("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
+                                        "fontSize":"80px","letterSpacing":"10px",
+                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px","marginTop":"10px"}),
             html.Div("SIMULADOR DE AERORREACTORES", style={"fontFamily":C["mono"],
-                                                            "fontSize":"10px","color":C["dim"],
-                                                            "letterSpacing":"6px","marginBottom":"16px"}),
-            html.P("Selecciona el tipo de motor para comenzar la simulacion",
-                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"14px",
-                          "color":C["dim"],"margin":"0"}),
-        ], style={"textAlign":"center","paddingBottom":"40px"}),
+                                                            "fontSize":"25px","color":C["dim"],
+                                                            "letterSpacing":"6px","marginBottom":"0px"}),
+            html.P("Selecciona el tipo de motor para comenzar la simulación",
+                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"22px","marginTop":"25px",
+                          "color":C["dim"]}),
+        ], style={"textAlign":"center","paddingBottom":"2px"}),
     ]),
-    dbc.Container([
-        dbc.Row([
-            dbc.Col(menu_engine_card(eid, cfg), width=3, className="mb-3")
-            for eid, cfg in ENGINE_CONFIGS.items()
-        ], className="g-3"),
-    ], fluid=True, style={"maxWidth":"1400px","margin":"0 auto","padding":"0 24px"}),
-    html.Div("AeroSim v4.2  ·  components.py  ·  2025", style={
-        "textAlign":"center","fontFamily":C["mono"],"fontSize":"10px",
+    dbc.Container(
+    html.Div([menu_engine_card(eid, cfg)
+            for eid, cfg in ENGINE_CONFIGS.items()],
+        style={"display": "grid","gridTemplateColumns": "repeat(2, 1fr)","gap": "30px",
+            "justifyContent": "center","maxWidth": "2000px","margin": "0 auto"}),
+    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 24px"}),
+    html.Div("PROP-Lab v4.2  ·  components.py  ·  2025", style={
+        "textAlign":"center","fontFamily":C["mono"],"fontSize":"14px",
         "color":C["border"],"padding":"32px","marginTop":"16px",
     }),
 ], id="screen-menu", style={"minHeight":"100vh","background":C["bg"],
@@ -517,8 +506,8 @@ sim_screen = html.Div([
     html.Div([
         html.Div([
             html.Button("← MENU", id="btn-back", n_clicks=0),
-            html.Span("AEROSIM", style={"fontFamily":C["head"],"fontWeight":"900",
-                                         "fontSize":"18px","letterSpacing":"5px",
+            html.Span("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
+                                         "fontSize":"25px","letterSpacing":"5px",
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
@@ -541,33 +530,19 @@ sim_screen = html.Div([
 
             # Centro: métricas + esquema SVG + gráficas
             dbc.Col([
-                dbc.Row([
-                    dbc.Col(metric_card("Empuje neto",    "thrust","kN",    "good"), width=4),
-                    dbc.Col(metric_card("TIT",            "tit",   "K",     "hot"),  width=4),
-                    dbc.Col(metric_card("TSFC",           "tsfc",  "mg/Ns", ""),      width=4),
-                ], className="mt-3 mb-1 g-1"),
-                dbc.Row([
-                    dbc.Col(metric_card("eta Termico",    "etath",  "%",   ""),    width=3),
-                    dbc.Col(metric_card("eta Propulsivo", "etaprop","%",   ""),    width=3),
-                    dbc.Col(metric_card("eta Global",     "etag",   "%",   "good"),width=3),
-                    dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=3),
-                ], className="mb-1 g-1"),
                 # Esquema SVG del motor
                 html.Div(id="engine-diagram",
                          className="graph-card mb-1",
                          style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
                 dbc.Row([
+                    dbc.Col(metric_card("Empuje neto",    "thrust","kN",    "good"), width=4),
+                    dbc.Col(metric_card("TSFC",           "tsfc",  "mg/Ns", ""),      width=4),
+                    dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=4),
+                ], className="mt-3 mb-1 g-1"),
+                dbc.Row([
                     dbc.Col(html.Div(dcc.Graph(id="graph-ts",  config={"displayModeBar":False}),
                                     className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-eta", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
                 ], className="g-1 mb-1"),
-                dbc.Row([
-                    dbc.Col(html.Div(dcc.Graph(id="graph-tit", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-opr", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                ], className="g-1"),
             ], width=7, style=PANEL_C),
 
             # Derecha: telemetría
@@ -582,7 +557,7 @@ sim_screen = html.Div([
     html.Div([
         html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
         html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
-        html.Span("AeroSim v4.2 · 2025", style={"marginLeft":"auto"}),
+        html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
     ], className="sim-footer"),
 
 ], id="screen-sim", style={"display":"none","minHeight":"100vh","background":C["bg"]})
@@ -644,7 +619,7 @@ def navigate(*args):
         {"display":"none"},
         {"minHeight":"100vh","background":C["bg"]},
         cfg["label"].upper(),
-        f"{cfg['icon']}  {cfg['label'].upper()}",
+        f"{cfg['label'].upper()}",
         *slider_styles,
     )
 
@@ -669,16 +644,9 @@ def update_labels(*vals):
 
 @app.callback(
     Output("m-thrust",        "children"),
-    Output("m-tit",           "children"),
     Output("m-tsfc",          "children"),
-    Output("m-etath",         "children"),
-    Output("m-etaprop",       "children"),
-    Output("m-etag",          "children"),
     Output("m-fuel",          "children"),
     Output("graph-ts",        "figure"),
-    Output("graph-eta",       "figure"),
-    Output("graph-tit",       "figure"),
-    Output("graph-opr",       "figure"),
     Output("tele-table",      "children"),
     Output("alert-tit",       "children"),
     Output("alert-tit",       "style"),
@@ -718,11 +686,7 @@ def run_simulation(engine_type, *all_vals):
     # Métricas
     metrics = [
         f"{r['thrust_kN']:.2f}",
-        f"{tit_val:.0f}",
         f"{r['TSFC_mg']:.3f}",
-        f"{r['eta_th']:.1f}",
-        f"{r['eta_prop']:.1f}",
-        f"{r['eta_global']:.1f}",
         f"{r['fuel_kg_s']:.4f}",
     ]
 
@@ -760,80 +724,6 @@ def run_simulation(engine_type, *all_vals):
     fig_ts.update_xaxes(**_ax("Entropia relativa  [kJ/kg·K]"))
     fig_ts.update_yaxes(**_ax("Temperatura  [K]"))
 
-    # ── Rendimientos ──────────────────────────────────────────────────────
-    fig_eta = go.Figure()
-    for lbl, val, col, pat in [
-        ("eta Termico",    r["eta_th"],     C["accent"],  "/"),
-        ("eta Propulsivo", r["eta_prop"],   C["accent2"], "x"),
-        ("eta Global",     r["eta_global"], color,        ""),
-    ]:
-        mk = dict(color=col, opacity=0.85, line=dict(color=col,width=1))
-        if pat:
-            mk["pattern"] = dict(shape=pat, size=4, fgcolor=C["panel"], fgopacity=0.4)
-        fig_eta.add_trace(go.Bar(
-            x=[lbl], y=[val], marker=mk,
-            text=[f"{val:.1f}%"], textposition="outside",
-            textfont=dict(color=C["text"],size=10,family=C["mono"]), name=lbl,
-        ))
-    fig_eta.update_layout(**_plot_layout("Rendimientos del ciclo  [%]"),
-                           showlegend=False, yaxis_range=[0,115], bargap=0.35)
-    fig_eta.update_xaxes(**_ax())
-    fig_eta.update_yaxes(**_ax("%"))
-
-    # ── Empuje vs TIT ─────────────────────────────────────────────────────
-    tit_data = sim.sweep_tit(engine_type, sweep_p)
-    txs, tys = zip(*tit_data) if tit_data else ([],[])
-    fig_tit = go.Figure()
-    fig_tit.add_trace(go.Scatter(
-        x=list(txs), y=list(tys), mode="lines",
-        line=dict(color=C["accent2"],width=1.5),
-        fill="tozeroy", fillcolor=_rgba(C["accent2"], 0.10),
-        showlegend=False,
-    ))
-    fig_tit.add_trace(go.Scatter(
-        x=[tit_val], y=[r["thrust_kN"]], mode="markers",
-        marker=dict(size=9,color=color,symbol="square",
-                    line=dict(color=C["text"],width=1.5)),
-        showlegend=False,
-    ))
-    fig_tit.add_vline(x=tit_val, line_width=1, line_dash="dot", line_color=C["border2"])
-    fig_tit.update_layout(**_plot_layout("Empuje neto  vs  TIT"))
-    fig_tit.update_xaxes(**_ax("TIT  [K]"))
-    fig_tit.update_yaxes(**_ax("Empuje  [kN]"))
-
-    # ── BPR o OPR sweep ───────────────────────────────────────────────────
-    if engine_type == "SingleFlowTurbofan":
-        bpr_data = sim.sweep_bpr(sweep_p)
-        bxs, bys = zip(*bpr_data) if bpr_data else ([],[])
-        cur_bpr  = p.get("tf_bpr", 0.8)
-        fig_opr  = go.Figure()
-        fig_opr.add_trace(go.Scatter(
-            x=list(bxs), y=list(bys), mode="lines",
-            line=dict(color=C["accent3"],width=1.5),
-            fill="tozeroy", fillcolor=_rgba(C["accent3"], 0.10), showlegend=False,
-        ))
-        fig_opr.add_trace(go.Scatter(
-            x=[cur_bpr], y=[r["TSFC_mg"]], mode="markers",
-            marker=dict(size=9,color=color,symbol="square",
-                        line=dict(color=C["text"],width=1.5)),
-            showlegend=False,
-        ))
-        fig_opr.add_vline(x=cur_bpr, line_width=1, line_dash="dot", line_color=C["border2"])
-        fig_opr.update_layout(**_plot_layout("TSFC  vs  Bypass Ratio"))
-        fig_opr.update_xaxes(**_ax("Bypass Ratio"))
-        fig_opr.update_yaxes(**_ax("TSFC  [mg/N·s]"))
-    else:
-        opr_data = sim.sweep_opr(engine_type, sweep_p)
-        oxs, oys = zip(*opr_data) if opr_data else ([],[])
-        fig_opr  = go.Figure()
-        fig_opr.add_trace(go.Scatter(
-            x=list(oxs), y=list(oys), mode="lines",
-            line=dict(color=C["accent3"],width=1.5),
-            fill="tozeroy", fillcolor=_rgba(C["accent3"], 0.10), showlegend=False,
-        ))
-        fig_opr.update_layout(**_plot_layout("eta Termico  vs  OPR"))
-        fig_opr.update_xaxes(**_ax("OPR"))
-        fig_opr.update_yaxes(**_ax("eta Termico  [%]"))
 
     # ── Telemetría con subíndices ─────────────────────────────────────────
     SUB = {"fontSize":"0.72em", "lineHeight":"1"}
@@ -905,7 +795,7 @@ def run_simulation(engine_type, *all_vals):
     # ── Esquema SVG ───────────────────────────────────────────────────────
     diagram = build_engine_diagram(engine_type, r.get("df"))
 
-    return metrics + [fig_ts, fig_eta, fig_tit, fig_opr,
+    return metrics + [fig_ts,
                       table, alert_msg, alert_style, diagram]
 
 

@@ -19,7 +19,7 @@ import simulation as sim
 app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    title="PROP-Lab",
+    title="AeroSim",
     suppress_callback_exceptions=True,
 )
 server = app.server
@@ -47,12 +47,12 @@ C = {
 
 ENGINE_CONFIGS = {
     "OneSpoolEngine": {
-        "label":    "Aerorreactor Monoeje",
+        "label":    "Turbojet Monoeje",
         "subtitle": "Single Spool Turbojet",
         "icon":     "◈",
         "color":    "#1a4d8f",
         "specs": [("Ejes","1"),("Aplicacion","Caza / Misil"),("Mach max","2.5+"),("OPR tipico","10–20")],
-        "desc": "Un único eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
+        "desc": "Un unico eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
         "sliders": [
             ("os_alt",  "Altitud [m]",         0,    12000, 0,    100),
             ("os_t0",   "Temperatura T0 [C]",  -70,  50,    15,   1),
@@ -77,7 +77,7 @@ ENGINE_CONFIGS = {
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Aerorreactor Bieje",
+        "label":    "Turbojet Bieje",
         "subtitle": "Twin Spool Turbojet",
         "icon":     "⬡",
         "color":    "#b83232",
@@ -154,7 +154,7 @@ ENGINE_CONFIGS = {
         "label":    "Turboprop",
         "subtitle": "Single Spool Turboprop",
         "icon":     "✦",
-        "color":    "#772aa1",
+        "color":    "#9c4d00",
         "specs": [("Ejes","2 (HP + LP)"),("Aplicacion","Regional / Carga"),("Mach max","0.6"),("OPR tipico","10–25")],
         "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
         "sliders": [
@@ -411,10 +411,10 @@ def build_engine_diagram(engine_type, df):
     )
 
     return dcc.Graph(
-    figure=fig,
-    config={"displayModeBar": False, "staticPlot": True},
-    style={"height": "100%", "width": "100%"},
-)
+        figure=fig,
+        config={"displayModeBar": False, "staticPlot": True},
+        style={"height":"110px"},
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -422,36 +422,35 @@ def build_engine_diagram(engine_type, df):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def menu_engine_card(eid, cfg):
-    specs = html.Div(
-    [html.Div([
-            html.Span(k, style={"display":"block","color":C["dim"],"fontSize":"20px",
-                                "fontFamily":C["head"],"letterSpacing":"3px","textTransform":"uppercase",
-                "marginBottom":"1px"}),
-            html.Span(v, style={"color":C["text"],"fontSize":"25px","fontFamily":C["mono"]}),
+    specs = [
+        html.Div([
+            html.Span(k, style={"display":"block","color":C["dim"],"fontSize":"8px",
+                                "fontFamily":C["head"],"letterSpacing":"3px",
+                                "textTransform":"uppercase","marginBottom":"1px"}),
+            html.Span(v, style={"color":C["text"],"fontSize":"13px","fontFamily":C["mono"]}),
         ], style={"marginBottom":"10px"})
-        for k, v in cfg["specs"]],
-    style={"display": "grid","gridTemplateColumns": "1fr 1fr",
-        "columnGap": "40px","rowGap": "10px"})
+        for k, v in cfg["specs"]
+    ]
     return html.Div([
         html.Div(style={"height":"3px","background":cfg["color"],"marginBottom":"18px"}),
         html.Div(cfg["icon"], style={"fontSize":"30px","color":cfg["color"],
                                      "display":"block","marginBottom":"10px","lineHeight":"1"}),
-        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"30px",
+        html.Div(cfg["label"], style={"fontFamily":C["head"],"fontWeight":"900","fontSize":"18px",
                                        "letterSpacing":"2px","textTransform":"uppercase",
-                                       "color":C["text"],"marginBottom":"2px","color":cfg["color"]}),
-        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"18px",
+                                       "color":C["text"],"marginBottom":"2px"}),
+        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"9px",
                                           "color":cfg["color"],"letterSpacing":"2px",
                                           "marginBottom":"12px"}),
-        html.P(cfg["desc"], style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"18px",
+        html.P(cfg["desc"], style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"12px",
                                     "color":C["dim"],"lineHeight":"1.6","marginBottom":"16px"}),
         html.Div(specs, style={"borderTop":f"1px solid {C['border']}",
-                                "paddingTop":"12px","marginBottom":"16px"}),                   
+                                "paddingTop":"12px","marginBottom":"16px"}),
         html.Button("SELECCIONAR  →", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",
-            "fontSize":"15px","letterSpacing":"3px","padding":"8px 0",
-            "cursor":"pointer","width":"100%","textTransform":"uppercase",}),
-        
+            "fontSize":"10px","letterSpacing":"3px","padding":"8px 0",
+            "cursor":"pointer","width":"100%","textTransform":"uppercase",
+        }),
     ], id=f"menu-card-{eid}", style={
         "background":C["panel"],"border":f"1px solid {C['border']}",
         "padding":"22px 20px","height":"100%",
@@ -466,28 +465,28 @@ menu_screen = html.Div([
             "marginBottom":"48px",
         }),
         html.Div([
-            #html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
-            #                                    "color":C["border2"],"letterSpacing":"4px",
-            #                                    "marginBottom":"10px"}),
-            html.Div("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                        "fontSize":"80px","letterSpacing":"10px",
-                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px","marginTop":"10px"}),
+            html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
+                                                "color":C["border2"],"letterSpacing":"4px",
+                                                "marginBottom":"10px"}),
+            html.Div("AEROSIM", style={"fontFamily":C["head"],"fontWeight":"900",
+                                        "fontSize":"52px","letterSpacing":"14px",
+                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px"}),
             html.Div("SIMULADOR DE AERORREACTORES", style={"fontFamily":C["mono"],
-                                                            "fontSize":"25px","color":C["dim"],
-                                                            "letterSpacing":"6px","marginBottom":"0px"}),
-            html.P("Selecciona el tipo de motor para comenzar la simulación",
-                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"22px","marginTop":"25px",
-                          "color":C["dim"]}),
-        ], style={"textAlign":"center","paddingBottom":"2px"}),
+                                                            "fontSize":"10px","color":C["dim"],
+                                                            "letterSpacing":"6px","marginBottom":"16px"}),
+            html.P("Selecciona el tipo de motor para comenzar la simulacion",
+                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"14px",
+                          "color":C["dim"],"margin":"0"}),
+        ], style={"textAlign":"center","paddingBottom":"40px"}),
     ]),
-    dbc.Container(
-    html.Div([menu_engine_card(eid, cfg)
-            for eid, cfg in ENGINE_CONFIGS.items()],
-        style={"display": "grid","gridTemplateColumns": "repeat(2, 1fr)","gap": "30px",
-            "justifyContent": "center","maxWidth": "2000px","margin": "0 auto"}),
-    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 24px"}),
-    html.Div("PROP-Lab v4.2  ·  components.py  ·  2025", style={
-        "textAlign":"center","fontFamily":C["mono"],"fontSize":"14px",
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(menu_engine_card(eid, cfg), width=3, className="mb-3")
+            for eid, cfg in ENGINE_CONFIGS.items()
+        ], className="g-3"),
+    ], fluid=True, style={"maxWidth":"1400px","margin":"0 auto","padding":"0 24px"}),
+    html.Div("AeroSim v4.2  ·  components.py  ·  2025", style={
+        "textAlign":"center","fontFamily":C["mono"],"fontSize":"10px",
         "color":C["border"],"padding":"32px","marginTop":"16px",
     }),
 ], id="screen-menu", style={"minHeight":"100vh","background":C["bg"],
@@ -518,8 +517,8 @@ sim_screen = html.Div([
     html.Div([
         html.Div([
             html.Button("← MENU", id="btn-back", n_clicks=0),
-            html.Span("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                         "fontSize":"25px","letterSpacing":"5px",
+            html.Span("AEROSIM", style={"fontFamily":C["head"],"fontWeight":"900",
+                                         "fontSize":"18px","letterSpacing":"5px",
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
@@ -542,10 +541,6 @@ sim_screen = html.Div([
 
             # Centro: métricas + esquema SVG + gráficas
             dbc.Col([
-                # Esquema SVG del motor
-                html.Div(id="engine-diagram",
-                         className="graph-card mb-1",
-                         style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
                 dbc.Row([
                     dbc.Col(metric_card("Empuje neto",    "thrust","kN",    "good"), width=4),
                     dbc.Col(metric_card("TIT",            "tit",   "K",     "hot"),  width=4),
@@ -557,6 +552,10 @@ sim_screen = html.Div([
                     dbc.Col(metric_card("eta Global",     "etag",   "%",   "good"),width=3),
                     dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=3),
                 ], className="mb-1 g-1"),
+                # Esquema SVG del motor
+                html.Div(id="engine-diagram",
+                         className="graph-card mb-1",
+                         style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
                 dbc.Row([
                     dbc.Col(html.Div(dcc.Graph(id="graph-ts",  config={"displayModeBar":False}),
                                     className="graph-card"), width=6),
@@ -583,7 +582,7 @@ sim_screen = html.Div([
     html.Div([
         html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
         html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
-        html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
+        html.Span("AeroSim v4.2 · 2025", style={"marginLeft":"auto"}),
     ], className="sim-footer"),
 
 ], id="screen-sim", style={"display":"none","minHeight":"100vh","background":C["bg"]})

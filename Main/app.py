@@ -816,80 +816,78 @@ def run_simulation(engine_type, *all_vals):
     fig_ts.update_xaxes(**_ax("Entropia relativa  [kJ/kg·K]"))
     fig_ts.update_yaxes(**_ax("Temperatura  [K]"))
 
-    # ── Rendimientos ──────────────────────────────────────────────────────
-    fig_eta = go.Figure()
-    for lbl, val, col, pat in [
-        ("eta Termico",    r["eta_th"],     C["accent"],  "/"),
-        ("eta Propulsivo", r["eta_prop"],   C["accent2"], "x"),
-        ("eta Global",     r["eta_global"], color,        ""),
-    ]:
-        mk = dict(color=col, opacity=0.85, line=dict(color=col,width=1))
-        if pat:
-            mk["pattern"] = dict(shape=pat, size=4, fgcolor=C["panel"], fgopacity=0.4)
-        fig_eta.add_trace(go.Bar(
-            x=[lbl], y=[val], marker=mk,
-            text=[f"{val:.1f}%"], textposition="outside",
-            textfont=dict(color=C["text"],size=10,family=C["mono"]), name=lbl,
-        ))
-    fig_eta.update_layout(**_plot_layout("Rendimientos del ciclo  [%]"),
-                           showlegend=False, yaxis_range=[0,115], bargap=0.35)
-    fig_eta.update_xaxes(**_ax())
-    fig_eta.update_yaxes(**_ax("%"))
+    # ── Línea de funcionamiento del compresor ─────────────────────────────
+    # Barrido de OPR manteniendo todos los demás parámetros fijos
+    # Eje X: flujo másico reducido  W√T/P (proporcional a G·√T2t/P2t)
+    # Eje Y: relación de presiones del compresor
+    sweep_p = cfg["sweep_base"](p)
+    opr_key = "pi_lpc" if engine_type == "TwinSpoolEngine" else "pi_23"
+    opr_cur = r.get("opr", p.get("os_pi", p.get("ts_pilpc", p.get("tf_pi", p.get("tp_pi", 10)))))
+    T2t = r["T0_K"]; P2t = r["Pt0_kPa"] * 1000
 
-    # ── Empuje vs TIT ─────────────────────────────────────────────────────
-    tit_data = sim.sweep_tit(engine_type, sweep_p)
-    txs, tys = zip(*tit_data) if tit_data else ([],[])
-    fig_tit = go.Figure()
-    fig_tit.add_trace(go.Scatter(
-        x=list(txs), y=list(tys), mode="lines",
-        line=dict(color=C["accent2"],width=1.5),
-        fill="tozeroy", fillcolor=_rgba(C["accent2"], 0.10),
-        showlegend=False,
-    ))
-    fig_tit.add_trace(go.Scatter(
-        x=[tit_val], y=[r["thrust_kN"]], mode="markers",
-        marker=dict(size=9,color=color,symbol="square",
-                    line=dict(color=C["text"],width=1.5)),
-        showlegend=False,
-    ))
-    fig_tit.add_vline(x=tit_val, line_width=1, line_dash="dot", line_color=C["border2"])
-    fig_tit.update_layout(**_plot_layout("Empuje neto  vs  TIT"))
-    fig_tit.update_xaxes(**_ax("TIT  [K]"))
-    fig_tit.update_yaxes(**_ax("Empuje  [kN]"))
+    oprs   = np.linspace(1.5, 50, 60)
+    w_red  = []   # flujo másico reducido (u.a.)
+    pi_pts = []
+    for o in oprs:
+        try:
+            if engine_type == "TwinSpoolEngine":
+                pp = {**sweep_p, "pi_lpc": max(1.1, o**0.4), "pi_hpc": max(1.1, o**0.6)}
+            else:
+                pp = {**sweep_p, opr_key: o}
+            cls = ENGINE_CONFIGS[engine_type]["engine_cls"]
+            rr  = cls().simulate(**pp)
+            # Flujo másico reducido: G·√(T2t) / P2t  (en u.a.)
+            T2_loc = rr["T0_K"]; P2_loc = rr["Pt0_kPa"] * 1000
+            G_loc  = sweep_p.get("G", 20)
+            w_red.append(G_loc * np.sqrt(T2_loc) / max(P2_loc, 1))
+            pi_pts.append(o)
+        except Exception:
+            pass
 
-    # ── BPR o OPR sweep ───────────────────────────────────────────────────
-    if engine_type == "SingleFlowTurbofan":
-        bpr_data = sim.sweep_bpr(sweep_p)
-        bxs, bys = zip(*bpr_data) if bpr_data else ([],[])
-        cur_bpr  = p.get("tf_bpr", 0.8)
-        fig_opr  = go.Figure()
-        fig_opr.add_trace(go.Scatter(
-            x=list(bxs), y=list(bys), mode="lines",
-            line=dict(color=C["accent3"],width=1.5),
-            fill="tozeroy", fillcolor=_rgba(C["accent3"], 0.10), showlegend=False,
+    # Punto de funcionamiento actual
+    G_cur  = sweep_p.get("G", 20)
+    wred_cur = G_cur * np.sqrt(T2t) / max(P2t, 1)
+    pi_cur   = opr_cur if engine_type != "TwinSpoolEngine" else p.get("ts_pilpc", 1.6)
+
+    fig_comp = go.Figure()
+    # Curva de la línea de funcionamiento
+    if w_red:
+        fig_comp.add_trace(go.Scatter(
+            x=w_red, y=pi_pts, mode="lines",
+            line=dict(color=color, width=2),
+            name="Linea funcionamiento",
+            hovertemplate="W_red=%{x:.3f}<br>π=%{y:.2f}<extra></extra>",
         ))
-        fig_opr.add_trace(go.Scatter(
-            x=[cur_bpr], y=[r["TSFC_mg"]], mode="markers",
-            marker=dict(size=9,color=color,symbol="square",
-                        line=dict(color=C["text"],width=1.5)),
-            showlegend=False,
+    # Punto de diseño actual
+    fig_comp.add_trace(go.Scatter(
+        x=[wred_cur], y=[pi_cur], mode="markers",
+        marker=dict(size=10, color=C["accent2"], symbol="diamond",
+                    line=dict(color=C["text"], width=1.5)),
+        name="Pto. diseño",
+        hovertemplate="W_red=%{x:.3f}<br>π=%{y:.2f}<extra></extra>",
+    ))
+    # Líneas de margen de surge (zona de inestabilidad, ~15% sobre la línea)
+    if w_red:
+        w_surge = [w * 0.85 for w in w_red]
+        fig_comp.add_trace(go.Scatter(
+            x=w_surge, y=pi_pts, mode="lines",
+            line=dict(color=C["accent2"], width=1, dash="dash"),
+            name="Limite surge",
+            hoverinfo="skip",
         ))
-        fig_opr.add_vline(x=cur_bpr, line_width=1, line_dash="dot", line_color=C["border2"])
-        fig_opr.update_layout(**_plot_layout("TSFC  vs  Bypass Ratio"))
-        fig_opr.update_xaxes(**_ax("Bypass Ratio"))
-        fig_opr.update_yaxes(**_ax("TSFC  [mg/N·s]"))
-    else:
-        opr_data = sim.sweep_opr(engine_type, sweep_p)
-        oxs, oys = zip(*opr_data) if opr_data else ([],[])
-        fig_opr  = go.Figure()
-        fig_opr.add_trace(go.Scatter(
-            x=list(oxs), y=list(oys), mode="lines",
-            line=dict(color=C["accent3"],width=1.5),
-            fill="tozeroy", fillcolor=_rgba(C["accent3"], 0.10), showlegend=False,
-        ))
-        fig_opr.update_layout(**_plot_layout("eta Termico  vs  OPR"))
-        fig_opr.update_xaxes(**_ax("OPR"))
-        fig_opr.update_yaxes(**_ax("eta Termico  [%]"))
+        fig_comp.add_vrect(
+            x0=0, x1=min(w_surge),
+            fillcolor=_rgba(C["accent2"], 0.07),
+            line_width=0, layer="below",
+        )
+    fig_comp.update_layout(
+        **_plot_layout("Linea de funcionamiento  [Compresor]"),
+        legend=dict(font=dict(size=8, family=C["mono"], color=C["dim"]),
+                    bgcolor="rgba(0,0,0,0)", borderwidth=0,
+                    x=0.02, y=0.98),
+    )
+    fig_comp.update_xaxes(**_ax("Flujo masico reducido  W√T/P  [u.a.]"))
+    fig_comp.update_yaxes(**_ax("Relacion de presiones  π"))
 
     # ── Telemetría con subíndices ─────────────────────────────────────────
     SUB = {"fontSize":"0.72em", "lineHeight":"1"}
@@ -961,7 +959,7 @@ def run_simulation(engine_type, *all_vals):
     # ── Esquema SVG ───────────────────────────────────────────────────────
     diagram = build_engine_diagram(engine_type, r.get("df"))
 
-    return metrics + [fig_ts, fig_eta, fig_tit, fig_opr,
+    return metrics + [fig_ts, fig_comp,
                       table, alert_msg, alert_style, diagram]
 
 

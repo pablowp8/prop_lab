@@ -613,17 +613,11 @@ sim_screen = html.Div([
                     dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=3),
                 ], className="mb-1 g-1"),
                 dbc.Row([
-                    dbc.Col(html.Div(dcc.Graph(id="graph-ts",  config={"displayModeBar":False}),
+                    dbc.Col(html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}),
                                     className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-eta", config={"displayModeBar":False}),
+                    dbc.Col(html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False}),
                                     className="graph-card"), width=6),
                 ], className="g-1 mb-1"),
-                dbc.Row([
-                    dbc.Col(html.Div(dcc.Graph(id="graph-tit", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-opr", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                ], className="g-1"),
             ], width=7, style=PANEL_C),
 
             # Derecha: telemetría
@@ -741,9 +735,7 @@ def update_labels(*vals):
     Output("m-etag",          "children"),
     Output("m-fuel",          "children"),
     Output("graph-ts",        "figure"),
-    Output("graph-eta",       "figure"),
-    Output("graph-tit",       "figure"),
-    Output("graph-opr",       "figure"),
+    Output("graph-comp",      "figure"),
     Output("tele-table",      "children"),
     Output("alert-tit",       "children"),
     Output("alert-tit",       "style"),
@@ -772,7 +764,7 @@ def run_simulation(engine_type, *all_vals):
                        html.Td(msg_str[:80], className="tele-val")])]
         ed = html.Div(msg_str[:120], style={"padding":"8px","fontFamily":C["mono"],
                                              "fontSize":"10px","color":C["accent2"]})
-        return ["--"]*7 + [ef,ef,ef,ef, et, msg_str, {"display":"block"}, ed]
+        return ["--"]*7 + [ef,ef, et, msg_str, {"display":"block"}, ed]
 
     try:
         r = cfg["runner"](p)
@@ -791,8 +783,6 @@ def run_simulation(engine_type, *all_vals):
         f"{r['eta_global']:.1f}",
         f"{r['fuel_kg_s']:.4f}",
     ]
-
-    sweep_p = cfg["sweep_base"](p)
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────
     Pt0 = max(r["Pt0_kPa"], 0.001)

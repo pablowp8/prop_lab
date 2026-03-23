@@ -51,7 +51,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turbojet",
         "icon":     "◈",
         "color":    "#1a4d8f",
-        "specs": [("Ejes","1"),("Aplicacion","Caza / Misil"),("Mach max","2.5+"),("OPR tipico","10–20")],
+        "specs": [("Ejes","1"),("Compresor","Tipo selecionado")],
         "desc": "Un unico eje acopla el compresor con la turbina. Arquitectura simple y robusta para aplicaciones militares y velocidades supersonicas.",
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
@@ -61,9 +61,9 @@ ENGINE_CONFIGS = {
         ],
         # ── Sección 2: Punto de diseño ───────────────────────────────────────
         "sliders_diseno": [
-            ("os_tit",  "T\u2084t [K]",   800, 1800, 1400,  5),
-            ("os_G",    "G [kg/s]",         5,  200,   20,   1),
+            ("os_tit",  "T\u2084\u209C [K]",   800, 1800, 1400,  5),
             ("os_pi",   "\u03C0\u2082\u2083",  2,   30,   10,  0.1),
+            ("os_G",    "G [kg/s]",         5,  200,   20,   1),
         ],
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
@@ -93,7 +93,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Twin Spool Turbojet",
         "icon":     "⬡",
         "color":    "#b83232",
-        "specs": [("Ejes","2 (LP + HP)"),("Aplicacion","Militar / Civil"),("Mach max","2.0+"),("OPR tipico","15–30")],
+        "specs": [("Ejes","2 (LP + HP)"),("Compresor","Tipo selecionado")],
         "desc": "Dos ejes independientes LP y HP permiten optimizar la velocidad de cada etapa de compresion, mejorando rendimiento y estabilidad.",
         "sliders_vuelo": [
             ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
@@ -101,10 +101,10 @@ ENGINE_CONFIGS = {
             ("ts_mach", "M\u2080",          0,  2.5,   0,  0.01),
         ],
         "sliders_diseno": [
-            ("ts_tit",   "T\u2084t [K]",        800, 1900, 1450,  5),
-            ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
+            ("ts_tit",   "T\u2084\u209C [K]",        800, 1900, 1450,  5),
             ("ts_pilpc", "\u03C0\u2090 (LP)",    1.1,    6,  1.6, 0.1),
             ("ts_pihpc", "\u03C0\u1D47 (HP)",      2,   25,   12, 0.1),
+            ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
             ("ts_edif",  "\u03B7 difusor",     0.6, 0.99, 0.99, 0.01),
@@ -138,7 +138,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Flow Turbofan",
         "icon":     "⊕",
         "color":    "#1a6644",
-        "specs": [("Ejes","2 (Fan + HP)"),("Aplicacion","Aviacion comercial"),("Mach max","0.9"),("BPR tipico","0.5–1.5")],
+        "specs": [("Ejes","2 (Fan + HP)"),("Compresor","Tipo selecionado")],
         "desc": "El fan comprime flujo primario y secundario. La turbina LP mueve el fan y la HP el compresor de nucleo. Optimo para aviacion subsonica.",
         "sliders_vuelo": [
             ("tf_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
@@ -146,10 +146,11 @@ ENGINE_CONFIGS = {
             ("tf_mach", "M\u2080",          0,  1.0,   0,  0.01),
         ],
         "sliders_diseno": [
-            ("tf_tit",   "T\u2084t [K]",          800, 2000, 1500,  5),
-            ("tf_G",     "G [kg/s]",                10,  500,   90,  5),
-            ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
+            ("tf_tit",   "T\u2084\u209C [K]",          800, 2000, 1500,  5),
             ("tf_pi",    "\u03C0\u2082\u2083 nucleo", 2,   40,   25, 0.1),
+            ("tf_G",     "G [kg/s]",                10,  500,   90,  5),
+            ("tf_bpr",   "\u039B (BPR)",     0.1,  12,  0.8,  0.1),
+            ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
         ],
         "sliders_comp": [
             ("tf_edif",  "\u03B7 difusor",   0.6, 0.99, 0.99, 0.01),
@@ -159,7 +160,6 @@ ENGINE_CONFIGS = {
             ("tf_ehpt",  "\u03B7 turb. HP",  0.6, 0.99, 1.0,  0.01),
             ("tf_elpt",  "\u03B7 turb. LP",  0.6, 0.99, 1.0,  0.01),
             ("tf_enoz",  "\u03B7 tobera",    0.6, 0.99, 0.99, 0.01),
-            ("tf_bpr",   "\u039B (BPR)",     0.1,  12,  0.8,  0.1),
         ],
         "engine_cls": sim.SingleFlowTurbofan,
         "runner": lambda p: sim.SingleFlowTurbofan().simulate(
@@ -183,7 +183,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turboprop",
         "icon":     "✦",
         "color":    "#9c4d00",
-        "specs": [("Ejes","2 (HP + LP)"),("Aplicacion","Regional / Carga"),("Mach max","0.6"),("OPR tipico","10–25")],
+        "specs": [("Ejes","2 (HP + LP)"),("Compresor","Tipo selecionado")],
         "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
         "sliders_vuelo": [
             ("tp_t0",   "T\u2080 [°C]",  -50,  50,  15,   1),
@@ -192,8 +192,10 @@ ENGINE_CONFIGS = {
         ],
         "sliders_diseno": [
             ("tp_tit",  "T\u2084t [K]",          800, 1700, 1500,  5),
-            ("tp_G",    "G [kg/s]",                 5,  200,   90,  1),
             ("tp_pi",   "\u03C0\u2082\u2083",       2,   30,   25, 0.1),
+            ("tp_G",    "G [kg/s]",                 5,  200,   90,  1),
+            ("tp_Wh",    "W\u2095 [kW]",       10, 2000,  200, 10),
+            ("tp_etam",  "\u03B7 mecanica",   0.5, 0.99, 0.70, 0.01),
         ],
         "sliders_comp": [
             ("tp_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
@@ -202,8 +204,6 @@ ENGINE_CONFIGS = {
             ("tp_ehpt",  "\u03B7 turb. HP",   0.6, 0.99, 1.0,  0.01),
             ("tp_elpt",  "\u03B7 turb. LP",   0.6, 0.99, 1.0,  0.01),
             ("tp_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
-            ("tp_Wh",    "W\u2095 [kW]",       10, 2000,  200, 10),
-            ("tp_etam",  "\u03B7 mecanica",   0.5, 0.99, 0.70, 0.01),
         ],
         "engine_cls": sim.OneSpoolTurboprop,
         "runner": lambda p: sim.OneSpoolTurboprop().simulate(

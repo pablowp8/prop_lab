@@ -51,7 +51,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turbojet",
         "color":    "#1a4d8f",
 
-        "specs": [("Ejes","1"),("Compresor","Tipo selecionado")],
+        "specs": [("Ejes","1"),("Tobera","Tipo selecionado")],
         "desc": "",
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
@@ -95,7 +95,7 @@ ENGINE_CONFIGS = {
 
 
 
-        "specs": [("Ejes","2 (LP + HP)"),("Compresor","Tipo selecionado")],
+        "specs": [("Ejes","2 (LP + HP)"),("Tobera","Tipo selecionado")],
         "desc": "Dos ejes independientes LP y HP permiten optimizar la velocidad de cada etapa de compresion, mejorando rendimiento y estabilidad.",
         "sliders_vuelo": [
             ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
@@ -142,7 +142,7 @@ ENGINE_CONFIGS = {
         "color":    "#1a6644",
 
 
-        "specs": [("Ejes","2 (Fan + HP)"),("Compresor","Tipo selecionado")],
+        "specs": [("Ejes","2 (Fan + HP)"),("Tobera","Tipo selecionado")],
         "desc": "El fan comprime flujo primario y secundario. La turbina LP mueve el fan y la HP el compresor de nucleo. Optimo para aviacion subsonica.",
         "sliders_vuelo": [
             ("tf_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
@@ -190,7 +190,7 @@ ENGINE_CONFIGS = {
 
         "icon":     "✦",
         "color":    "#9c4d00",
-        "specs": [("Ejes","2 (HP + LP)"),("Compresor","Tipo selecionado")],
+        "specs": [("Ejes","2 (HP + LP)"),("Tobera","Tipo selecionado")],
         "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
         "sliders_vuelo": [
             ("tp_t0",   "T\u2080 [°C]",  -50,  50,  15,   1),

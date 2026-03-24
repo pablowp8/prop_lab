@@ -46,12 +46,9 @@ C = {
 # ══════════════════════════════════════════════════════════════════════════════
 ENGINE_CONFIGS = {
     "OneSpoolEngine": {
-        "label":    "Aerorreactor Monoeje",
+        "label":    "Turborreactor Monoeje",
         "subtitle": "Single Spool Turbojet",
         "color":    "#1a4d8f",
-
-        "specs": [("Ejes","1"),("Tobera","Tipo selecionado")],
-        "desc": "",
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
             ("os_t0",   "T\u2080 [°C]",   -70,  50,    15,   1),
@@ -88,14 +85,9 @@ ENGINE_CONFIGS = {
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Aerorreactor Bieje",
+        "label":    "Turborreactor Bieje",
         "subtitle": "Twin Spool Turbojet",
         "color":    "#b83232",
-
-
-
-        "specs": [("Ejes","2 (LP + HP)"),("Tobera","Tipo selecionado")],
-        "desc": "Dos ejes independientes LP y HP permiten optimizar la velocidad de cada etapa de compresion, mejorando rendimiento y estabilidad.",
         "sliders_vuelo": [
             ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
             ("ts_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
@@ -139,10 +131,6 @@ ENGINE_CONFIGS = {
         "label":    "Turbofan",
         "subtitle": "Single Flow Turbofan",
         "color":    "#1a6644",
-
-
-        "specs": [("Ejes","2 (Fan + HP)"),("Tobera","Tipo selecionado")],
-        "desc": "El fan comprime flujo primario y secundario. La turbina LP mueve el fan y la HP el compresor de nucleo. Optimo para aviacion subsonica.",
         "sliders_vuelo": [
             ("tf_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
             ("tf_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
@@ -183,14 +171,9 @@ ENGINE_CONFIGS = {
         },
     },
     "OneSpoolTurboprop": {
-        "label":    "Turboprop",
+        "label":    "Turbohélice",
         "subtitle": "Single Spool Turboprop",
-
-
-        "icon":     "✦",
         "color":    "#9c4d00",
-        "specs": [("Ejes","2 (HP + LP)"),("Tobera","Tipo selecionado")],
-        "desc": "La mayor parte de la energia mueve una helice via caja reductora. La tobera residual aporta empuje adicional. Optimo a baja velocidad.",
         "sliders_vuelo": [
             ("tp_t0",   "T\u2080 [°C]",  -50,  50,  15,   1),
             ("tp_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
@@ -467,30 +450,18 @@ def build_engine_diagram(engine_type, df):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def menu_engine_card(eid, cfg):
-    specs = html.Div(
-    [html.Div([
-            html.Span(k, style={"display":"block","color":C["dim"],"fontSize":"20px",
-                                "fontFamily":C["head"],"letterSpacing":"3px","textTransform":"uppercase",
-                "marginBottom":"1px"}),
-            html.Span(v, style={"color":C["text"],"fontSize":"25px","fontFamily":C["mono"]}),
-        ], style={"marginBottom":"10px"})
-        for k, v in cfg["specs"]],
-    style={"display": "grid","gridTemplateColumns": "1fr 1fr",
-        "columnGap": "40px","rowGap": "10px"})
     return html.Div([
-        html.Div(style={"height":"3px","background":cfg["color"],"marginBottom":"18px"}),
-        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"30px",
+        html.Div(style={"height":"3px","background":cfg["color"],"marginBottom":"5px"}),
+        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"25px",
                                        "letterSpacing":"2px","textTransform":"uppercase",
                                        "color":C["text"],"marginBottom":"2px","color":cfg["color"]}),
-        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"18px",
+        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"14px",
                                           "color":cfg["color"],"letterSpacing":"2px",
-                                          "marginBottom":"12px"}),
-        html.Div(specs, style={"borderTop":f"1px solid {C['border']}",
-                                "paddingTop":"12px","marginBottom":"16px"}),                   
-        html.Button("SELECCIONAR  →", id=f"btn-select-{eid}", n_clicks=0, style={
+                                          "marginBottom":"12px"}),                  
+        html.Button("DISEÑO", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",
-            "fontSize":"15px","letterSpacing":"3px","padding":"8px 0",
+            "fontSize":"13px","letterSpacing":"3px","padding":"8px 0",
             "cursor":"pointer","width":"100%","textTransform":"uppercase",}),
         
     ], id=f"menu-card-{eid}", style={
@@ -501,32 +472,26 @@ def menu_engine_card(eid, cfg):
 
 menu_screen = html.Div([
     html.Div([
-        html.Div(style={
-            "height":"3px",
-            "background":f"linear-gradient(90deg,{C['accent']} 0%,{C['border']} 100%)",
-            "marginBottom":"48px",
-        }),
         html.Div([
             #html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
             #                                    "color":C["border2"],"letterSpacing":"4px",
             #                                    "marginBottom":"10px"}),
             html.Div("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                        "fontSize":"80px","letterSpacing":"10px",
-                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px","marginTop":"10px"}),
+                                        "fontSize":"50px","letterSpacing":"8px",
+                                        "color":C["accent"],"lineHeight":"1","marginBottom":"8px","marginTop":"20px"}),
             html.Div("SIMULADOR DE AERORREACTORES", style={"fontFamily":C["mono"],
-                                                            "fontSize":"25px","color":C["dim"],
+                                                            "fontSize":"14px","color":C["dim"],
                                                             "letterSpacing":"6px","marginBottom":"0px"}),
-            html.P("Selecciona el tipo de motor para comenzar la simulación",
-                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"22px","marginTop":"25px",
-                          "color":C["dim"]}),
-        ], style={"textAlign":"center","paddingBottom":"2px"}),
+            html.P("Selecciona el tipo de motor para comenzar la fase de diseño",
+                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"14px","marginTop":"20px","color":C["dim"]}),
+        ], style={"textAlign":"center"}),
     ]),
     dbc.Container(
     html.Div([menu_engine_card(eid, cfg)
             for eid, cfg in ENGINE_CONFIGS.items()],
-        style={"display": "grid","gridTemplateColumns": "repeat(2, 1fr)","gap": "30px",
+        style={"display": "grid","gridTemplateColumns": "repeat(2, 1fr)","gap": "20px",
             "justifyContent": "center","maxWidth": "2000px","margin": "0 auto"}),
-    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 24px"}),
+    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 100px"}),
     html.Div("PROP-Lab v4.2  ·  components.py  ·  2025", style={
         "textAlign":"center","fontFamily":C["mono"],"fontSize":"14px",
         "color":C["border"],"padding":"32px","marginTop":"16px",

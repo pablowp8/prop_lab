@@ -1,6 +1,6 @@
 """
 components.py — Física de aerorreactores
-===============================================
+===================================================
 Clases de componentes y motores. Cada motor expone:
 
     resultado = Motor().simulate(T_amb, P_amb, mach, G, *params_motor)
@@ -196,7 +196,8 @@ class OneSpoolEngine:
         self.nozz = Nozzle()
 
     def simulate(self, T_amb, P_amb, mach, G, pi_23, tit,
-                 eta_c=None, eta_t=None):
+                 eta_dif=None, eta_c=None, eta_cc=None,
+                 eta_t=None, eta_noz=None):
         """
         Parámetros
         ----------
@@ -207,8 +208,11 @@ class OneSpoolEngine:
         tit          : temperatura de entrada a turbina [K]
         eta_c, eta_t : rendimientos isentrópicos (opcional, sobreescribe __init__)
         """
-        if eta_c is not None: self.comp.eta = eta_c
-        if eta_t is not None: self.turb.eta = eta_t
+        if eta_dif is not None: self.dif.eta  = eta_dif
+        if eta_c   is not None: self.comp.eta = eta_c
+        if eta_cc  is not None: self.cc.eta   = eta_cc
+        if eta_t   is not None: self.turb.eta = eta_t
+        if eta_noz is not None: self.nozz.eta = eta_noz
 
         V0 = mach * speed_of_sound(T_amb)
 
@@ -251,11 +255,15 @@ class TwinSpoolEngine:
         self.nozz          = Nozzle()
 
     def simulate(self, T_amb, P_amb, mach, G, pi_lpc, pi_hpc, tit,
-                 eta_lpc=None, eta_hpc=None, eta_lpt=None, eta_hpt=None):
-        if eta_lpc is not None: self.lp_compressor.eta = eta_lpc
-        if eta_hpc is not None: self.hp_compressor.eta = eta_hpc
-        if eta_lpt is not None: self.lp_turbine.eta    = eta_lpt
-        if eta_hpt is not None: self.hp_turbine.eta    = eta_hpt
+                 eta_dif=None, eta_lpc=None, eta_hpc=None, eta_cc=None,
+                 eta_lpt=None, eta_hpt=None, eta_noz=None):
+        if eta_dif is not None: self.dif.eta            = eta_dif
+        if eta_lpc is not None: self.lp_compressor.eta  = eta_lpc
+        if eta_hpc is not None: self.hp_compressor.eta  = eta_hpc
+        if eta_cc  is not None: self.cc.eta             = eta_cc
+        if eta_lpt is not None: self.lp_turbine.eta     = eta_lpt
+        if eta_hpt is not None: self.hp_turbine.eta     = eta_hpt
+        if eta_noz is not None: self.nozz.eta           = eta_noz
 
         V0 = mach * speed_of_sound(T_amb)
 
@@ -302,11 +310,15 @@ class SingleFlowTurbofan:
         self.nozz       = Nozzle()
 
     def simulate(self, T_amb, P_amb, mach, G, pi_23, tit, pi_fan, bpr,
-                 eta_c=None, eta_fan=None, eta_hpt=None, eta_lpt=None):
-        if eta_c   is not None: self.comp.eta       = eta_c
-        if eta_fan is not None: self.fan.eta         = eta_fan
+                 eta_dif=None, eta_c=None, eta_fan=None, eta_cc=None,
+                 eta_hpt=None, eta_lpt=None, eta_noz=None):
+        if eta_dif is not None: self.dif.eta         = eta_dif
+        if eta_c   is not None: self.comp.eta        = eta_c
+        if eta_fan is not None: self.fan.eta          = eta_fan
+        if eta_cc  is not None: self.cc.eta          = eta_cc
         if eta_hpt is not None: self.hp_turbine.eta  = eta_hpt
         if eta_lpt is not None: self.lp_turbine.eta  = eta_lpt
+        if eta_noz is not None: self.nozz.eta        = eta_noz
 
         V0 = mach * speed_of_sound(T_amb)
 
@@ -359,14 +371,18 @@ class OneSpoolTurboprop:
         self.nozz       = Nozzle()
 
     def simulate(self, T_amb, P_amb, mach, G, pi_23, tit, W_h, eta_m,
-                 eta_c=None, eta_hpt=None, eta_lpt=None):
+                 eta_dif=None, eta_c=None, eta_cc=None,
+                 eta_hpt=None, eta_lpt=None, eta_noz=None):
         """
         W_h   : potencia extraída al eje [W]
         eta_m : eficiencia mecánica de la transmisión
         """
-        if eta_c   is not None: self.comp.eta       = eta_c
+        if eta_dif is not None: self.dif.eta         = eta_dif
+        if eta_c   is not None: self.comp.eta        = eta_c
+        if eta_cc  is not None: self.cc.eta          = eta_cc
         if eta_hpt is not None: self.hp_turbine.eta  = eta_hpt
         if eta_lpt is not None: self.lp_turbine.eta  = eta_lpt
+        if eta_noz is not None: self.nozz.eta        = eta_noz
 
         V0 = mach * speed_of_sound(T_amb)
 

@@ -611,12 +611,18 @@ sim_screen = html.Div([
                     dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=4),
                 ], className="mt-3 mb-1 g-1"),
                 dbc.Row([
-
-                    dbc.Col(html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-
+                    dbc.Col(
+                        html.Div([
+                            html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
+                            html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
+                        ], className="chart-selector"),
+                    width=12),
+                ], className="mb-1"),
+                dbc.Row([
+                    dbc.Col([
+                        html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}), id="wrap-ts",   className="graph-card"),
+                        html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False}), id="wrap-comp", className="graph-card", style={"display":"none"}),
+                    ], width=12),
                 ], className="g-1 mb-1"),
             ], width=7, style=PANEL_C),
 
@@ -697,6 +703,21 @@ def navigate(*args):
         f"{cfg['label'].upper()}",
         *slider_styles,
     )
+
+
+@app.callback(
+    Output("wrap-ts",       "style"),
+    Output("wrap-comp",     "style"),
+    Output("btn-chart-ts",  "className"),
+    Output("btn-chart-comp","className"),
+    Input("btn-chart-ts",   "n_clicks"),
+    Input("btn-chart-comp", "n_clicks"),
+    prevent_initial_call=True,
+)
+def select_chart(_n_ts, _n_comp):
+    if ctx.triggered_id == "btn-chart-comp":
+        return {"display":"none"}, {}, "chart-btn", "chart-btn chart-btn-active"
+    return {}, {"display":"none"}, "chart-btn chart-btn-active", "chart-btn"
 
 
 # Mapa sid → step, para decidir el formato del label

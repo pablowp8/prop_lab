@@ -199,6 +199,28 @@ body::before {
 }
 .rc-slider-rail { background: var(--border) !important; }
 
+/* ── Selector de gráfica ── */
+.chart-selector {
+    display: flex; gap: 4px;
+    margin-bottom: 4px;
+}
+.chart-btn {
+    font-family: var(--head); font-weight: 700; font-size: 9px;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: var(--panel2); color: var(--dim);
+    border: 1px solid var(--border); padding: 5px 16px;
+    cursor: pointer; transition: all 0.15s;
+}
+.chart-btn:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(26,77,143,0.05);
+}
+.chart-btn-active {
+    background: var(--accent) !important;
+    color: var(--panel) !important;
+    border-color: var(--accent) !important;
+}
+
 /* ── Scrollbars ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }

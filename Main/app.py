@@ -29,10 +29,10 @@ C = {
     "bg":      "#edeae4",
     "panel":   "#f5f3ef",
     "panel2":  "#ebe7e0",
-    "border":  "#c8beb4",
-    "border2": "#a89e94",
+    "border":  "#78736F",
+    "border2": "#605B55",
     "text":    "#18243c",
-    "dim":     "#6e82a0",
+    "dim":     "#616264",
     "accent":  "#1a4d8f",
     "accent2": "#b83232",
     "accent3": "#1a6644",
@@ -102,9 +102,9 @@ ENGINE_CONFIGS = {
             ("ts_mach", "M\u2080",          0,  2.5,   0,  0.01),
         ],
         "sliders_diseno": [
-            ("ts_tit",   "T\u2084\u209C [K]",        800, 1900, 1450,  5),
-            ("ts_pilpc", "\u03C0\u2090 (LP)",    1.1,    6,  1.6, 0.1),
-            ("ts_pihpc", "\u03C0\u1D47 (HP)",      2,   25,   12, 0.1),
+            ("ts_tit",   "T\u2084\u209C [K]",     800, 1900, 1450,  5),
+            ("ts_pilpc", "\u03C0\u2095 (LP)",    1.1,    6,  1.6, 0.1),
+            ("ts_pihpc", "\u03C0\u2090 (HP)",      2,   25,   12, 0.1),
             ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
@@ -243,7 +243,7 @@ ALL_SLIDER_IDS = [
 def make_slider(sid, label, mn, mx, dfl, stp):
     return html.Div([
         html.Div([
-            html.Span(label, style={"fontSize":"10px","color":C["dim"],
+            html.Span(label, style={"fontSize":"12px","color":C["dim"],
                                     "fontFamily":C["head"],"letterSpacing":"1px"}),
             html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],
                                                "fontSize":"11px","color":C["accent"]}),
@@ -542,10 +542,11 @@ menu_screen = html.Div([
 def section_head(title):
     """Cabecera de sección dentro del panel de sliders."""
     return html.Div(title, style={
-        "fontSize":"8px", "fontFamily":C["head"], "fontWeight":"700",
+        "fontSize":"12px", "fontFamily":C["head"], "fontWeight":"700",
         "letterSpacing":"3px", "textTransform":"uppercase",
         "color":C["border2"], "padding":"10px 0 4px 0",
-        "borderTop":f"1px solid {C['border']}", "marginTop":"6px",
+        "borderTop":f"2px solid {C['text']}", 
+        "marginTop":"10px", "marginBottom": "10px",
     })
 
 all_slider_groups = []
@@ -581,9 +582,9 @@ sim_screen = html.Div([
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
-            html.Span("● LIVE",           className="nav-badge live me-2"),
+            # html.Span("● LIVE",           className="nav-badge live me-2"),
             html.Span(id="sim-eng-label", className="nav-badge me-2"),
-            html.Span("SESION: LAB-04",   className="nav-badge"),
+            # html.Span("SESION: LAB-04",   className="nav-badge"),
         ], style={"display":"flex","alignItems":"center"}),
     ], className="aerosim-nav"),
 

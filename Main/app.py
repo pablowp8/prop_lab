@@ -15,6 +15,7 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
 import simulation as sim
+from engine_diagrams import build_engine_diagram
 
 app = dash.Dash(
     __name__,
@@ -275,176 +276,6 @@ def _ax(title_text=None):
         d["title_text"] = title_text
     return d
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  ESQUEMA SVG DEL MOTOR
-# ══════════════════════════════════════════════════════════════════════════════
-
-def build_engine_diagram(engine_type, df):
-    """
-    Esquema del motor usando Plotly shapes + annotations.
-    Compatible con todas las versiones de Dash (sin dangerously_allow_html).
-    """
-    def tv(st):
-        try:    return float(df.loc[st, "T"]) if df is not None and st in df.index else None
-        except: return None
-    def pv(st):
-        try:    return float(df.loc[st, "P"]) / 1000 if df is not None and st in df.index else None
-        except: return None
-
-    CK = {
-        "intake": "#5a8abf", "fan":    "#1a7a5a", "lpc":  "#2a70b0",
-        "hpc":    C["accent"],"comb":  C["accent2"],"hpt": "#cc6600",
-        "lpt":    C["warn"],  "nozzle":"#7055aa",  "prop": C["accent3"],
-    }
-
-    # Coordenadas en espacio normalizado x:[0,1] y:[0,1]
-    # cy_n = eje central normalizado
-    W, H = 800, 1.0
-    cy = 0.5
-
-    shapes = []
-    annotations = []
-
-    def _hex_rgba(h, a=0.12):
-        h = h.lstrip("#")
-        r,g,b = int(h[0:2],16),int(h[2:4],16),int(h[4:6],16)
-        return f"rgba({r},{g},{b},{a})"
-
-    def box(x0, x1, y0, y1, color, label):
-        shapes.append(dict(
-            type="rect", x0=x0, x1=x1, y0=y0, y1=y1,
-            fillcolor=_hex_rgba(color, 0.15),
-            line=dict(color=color, width=1.5),
-            layer="below",
-        ))
-        annotations.append(dict(
-            x=(x0+x1)/2, y=(y0+y1)/2,
-            text=f"<b>{label}</b>",
-            showarrow=False,
-            font=dict(size=9, color=color, family="Share Tech Mono"),
-            xref="x", yref="y",
-        ))
-
-    def station(x, label, t_val, p_val):
-        # Línea vertical punteada
-        shapes.append(dict(
-            type="line", x0=x, x1=x, y0=cy-0.28, y1=cy+0.28,
-            line=dict(color=C["border"], width=0.8, dash="dot"),
-        ))
-        # Etiqueta estación Tt{n}
-        t_text = f"T<sub>t{label}</sub>"
-        val_text = f"{t_val:.0f} K" if t_val is not None else ""
-        p_text   = f"{p_val:.0f} kPa" if p_val is not None else ""
-        annotations.append(dict(
-            x=x, y=cy+0.35,
-            text=t_text,
-            showarrow=False,
-            font=dict(size=8, color=C["dim"], family="Share Tech Mono"),
-            xref="x", yref="y",
-        ))
-        if val_text:
-            annotations.append(dict(
-                x=x, y=cy+0.47,
-                text=val_text,
-                showarrow=False,
-                font=dict(size=7, color=C["accent"], family="Share Tech Mono"),
-                xref="x", yref="y",
-            ))
-        if p_text:
-            annotations.append(dict(
-                x=x, y=cy-0.40,
-                text=p_text,
-                showarrow=False,
-                font=dict(size=7, color=C["dim"], family="Share Tech Mono"),
-                xref="x", yref="y",
-            ))
-
-    # Eje central
-    shapes.append(dict(
-        type="line", x0=10, x1=790, y0=cy, y1=cy,
-        line=dict(color=C["border"], width=0.5, dash="dot"),
-    ))
-
-    # ── Geometría ────────────────────────────────────────────────────────
-    if engine_type == "OneSpoolEngine":
-        box(30,  110, cy-0.16, cy+0.16, CK["intake"], "DIFF")
-        box(115, 225, cy-0.26, cy+0.26, CK["hpc"],    "COMP")
-        box(230, 370, cy-0.22, cy+0.22, CK["comb"],   "COMB")
-        box(375, 485, cy-0.24, cy+0.24, CK["hpt"],    "TURB")
-        box(490, 580, cy-0.16, cy+0.16, CK["nozzle"], "NOZ")
-        stations = [(30,"0",0),(115,"2",2),(230,"3",3),
-                    (375,"4",4),(490,"5",5),(580,"9",9)]
-        title = "MONOEJE  ·  Brayton simple"
-
-    elif engine_type == "TwinSpoolEngine":
-        box(25,  95,  cy-0.14, cy+0.14, CK["intake"], "INTAKE")
-        box(100, 190, cy-0.20, cy+0.20, CK["lpc"],    "LPC")
-        box(195, 310, cy-0.28, cy+0.28, CK["hpc"],    "HPC")
-        box(315, 445, cy-0.22, cy+0.22, CK["comb"],   "COMB")
-        box(450, 545, cy-0.26, cy+0.26, CK["hpt"],    "HPT")
-        box(550, 645, cy-0.20, cy+0.20, CK["lpt"],    "LPT")
-        box(650, 725, cy-0.14, cy+0.14, CK["nozzle"], "NOZ")
-        stations = [(25,"0",0),(100,"2",2),(195,"2.5",2.5),(315,"3",3),
-                    (450,"4",4),(550,"4.5",4.5),(650,"5",5),(725,"9",9)]
-        title = "BIEJE  ·  LP + HP"
-
-    elif engine_type == "SingleFlowTurbofan":
-        box(25,  110, cy-0.32, cy+0.32, CK["fan"],    "FAN")
-        box(115, 235, cy-0.32, cy-0.12, CK["lpc"],    "BYPASS")
-        box(115, 235, cy-0.10, cy+0.22, CK["hpc"],    "HPC")
-        box(240, 370, cy-0.18, cy+0.18, CK["comb"],   "COMB")
-        box(375, 470, cy-0.20, cy+0.20, CK["hpt"],    "HPT")
-        box(475, 575, cy-0.26, cy+0.26, CK["lpt"],    "LPT")
-        box(580, 670, cy-0.30, cy+0.30, CK["nozzle"], "NOZ")
-        stations = [(25,"0",0),(115,"1.3",2),(240,"3",3),
-                    (375,"4",4),(475,"4.5",4.5),(580,"5",5),(670,"8",8)]
-        title = "TURBOFAN  ·  Fan + Nucleo"
-
-    else:  # Turboprop
-        box(5,   33,  cy-0.36, cy+0.36, CK["prop"],   "PROP")
-        box(38,  110, cy-0.14, cy+0.14, CK["intake"], "INTAKE")
-        box(115, 225, cy-0.26, cy+0.26, CK["hpc"],    "COMP")
-        box(230, 370, cy-0.22, cy+0.22, CK["comb"],   "COMB")
-        box(375, 475, cy-0.24, cy+0.24, CK["hpt"],    "HPT")
-        box(480, 580, cy-0.20, cy+0.20, CK["lpt"],    "LPT")
-        box(585, 665, cy-0.14, cy+0.14, CK["nozzle"], "NOZ")
-        stations = [(38,"0",0),(115,"2",2),(230,"3",3),
-                    (375,"4",4),(480,"4.5",4.5),(585,"5",5),(665,"9",9)]
-        title = "TURBOPROP  ·  Helice + Tobera"
-
-    for (sx, slbl, st_id) in stations:
-        station(sx, slbl, tv(st_id), pv(st_id))
-
-    # Título esquina superior derecha
-    annotations.append(dict(
-        x=790, y=0.97,
-        text=title,
-        showarrow=False,
-        font=dict(size=8, color=C["border2"], family="Share Tech Mono"),
-        xref="x", yref="y", xanchor="right",
-    ))
-
-    fig = go.Figure()
-    fig.update_layout(
-        shapes=shapes,
-        annotations=annotations,
-        plot_bgcolor=C["panel"],
-        paper_bgcolor=C["panel"],
-        margin=dict(l=0, r=0, t=0, b=0),
-        height=110,
-        xaxis=dict(range=[0, 800], visible=False, fixedrange=True),
-        yaxis=dict(range=[0, 1],   visible=False, fixedrange=True),
-        showlegend=False,
-    )
-
-    return dcc.Graph(
-    figure=fig,
-    config={"displayModeBar": False, "staticPlot": True},
-    style={"height": "100%", "width": "100%"},
-)
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  PANTALLA 1 — MENÚ
 # ══════════════════════════════════════════════════════════════════════════════
@@ -457,7 +288,9 @@ def menu_engine_card(eid, cfg):
                                        "color":C["text"],"marginBottom":"2px","color":cfg["color"]}),
         html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"14px",
                                           "color":cfg["color"],"letterSpacing":"2px",
-                                          "marginBottom":"12px"}),                  
+                                          "marginBottom":"12px"}),
+        html.Div(build_engine_diagram(eid, df=None),
+                style={"marginBottom":"10px","overflow":"hidden","lineHeight":"0"},),                  
         html.Button("DISEÑO", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",

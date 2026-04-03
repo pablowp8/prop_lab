@@ -221,6 +221,27 @@ body::before {
     border-color: var(--accent) !important;
 }
 
+/* ── Botón Actuaciones ── */
+.btn-actuaciones {
+    display: block;
+    width: 100%;
+    background: var(--accent);
+    color: var(--panel);
+    border: none;
+    font-family: var(--head);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 13px 0;
+    cursor: pointer;
+    transition: background 0.15s, letter-spacing 0.15s;
+}
+.btn-actuaciones:hover {
+    background: var(--text);
+    letter-spacing: 5px;
+}
+
 /* ── Scrollbars ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }

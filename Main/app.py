@@ -722,7 +722,7 @@ act_screen = html.Div([
             ], width=6),
             # ── Derecha: TSFC vs Mach (Crucero) ───────────────────────
             dbc.Col([
-                html.Div("TSFC vs Mach  —  Crucero", className="section-head mt-3"),
+                html.Div("Empuje vs Mach  —  Crucero", className="section-head mt-3"),
                 _act_slider("alt", "Altitud [m]", 0, 13000, 10000, 100,
                             {0:"0", 3000:"3 km", 6000:"6 km",
                              10000:"10 km", 13000:"13 km"}),
@@ -1339,27 +1339,27 @@ def compute_actuaciones(_n, t0_c, alt_m, engine_type, *all_vals):
     fig_thrust.update_xaxes(**_ax("Número de Mach  [ — ]"))
     fig_thrust.update_yaxes(**_ax("Empuje  [kN]"))
 
-    # ── TSFC vs Mach (condiciones de crucero: h=slider, T=ISA) ───────
+    # ── Empuje vs Mach (condiciones de crucero: h=slider, T=ISA) ────
     x_s, y_s = [], []
     for m in machs:
-        _, tsfc = run(m, T_cr, P_cr)
-        if tsfc is not None and tsfc > 0:
-            x_s.append(m); y_s.append(tsfc)
+        thrust_cr, _ = run(m, T_cr, P_cr)
+        if thrust_cr is not None:
+            x_s.append(m); y_s.append(thrust_cr)
 
-    h_km  = alt / 1000
-    T_isa = T_cr - 273.15
-    title_s = f"TSFC vs Mach  —  h = {h_km:.1f} km,  T_ISA = {T_isa:.1f} °C"
+    h_km    = alt / 1000
+    T_isa   = T_cr - 273.15
+    title_s = f"Empuje vs Mach  —  h = {h_km:.1f} km,  T_ISA = {T_isa:.1f} °C"
     fig_tsfc = go.Figure()
     fig_tsfc.add_trace(go.Scatter(
         x=x_s, y=y_s, mode="lines",
         line=dict(color=color, width=2.5),
         fill="tozeroy", fillcolor=_rgba(color, 0.07),
-        hovertemplate="M = %{x:.3f}<br>TSFC = %{y:.3f} mg/Ns<extra></extra>",
+        hovertemplate="M = %{x:.3f}<br>F = %{y:.2f} kN<extra></extra>",
         showlegend=False,
     ))
     fig_tsfc.update_layout(**_plot_layout(title_s))
     fig_tsfc.update_xaxes(**_ax("Número de Mach  [ — ]"))
-    fig_tsfc.update_yaxes(**_ax("TSFC  [mg/N·s]"))
+    fig_tsfc.update_yaxes(**_ax("Empuje  [kN]"))
 
     return fig_thrust, fig_tsfc
 

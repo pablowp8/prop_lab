@@ -52,19 +52,19 @@ ENGINE_CONFIGS = {
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
             ("os_t0",   "T\u2080 [°C]",   -70,  50,    15,   1),
-            ("os_p0",   "P\u2080 [kPa]",   20,  105,  101.3, 0.1),
+            ("os_p0",   "P\u2080 [kPa]",   20,  105,  101.325, 0.1),
             ("os_mach", "M\u2080",           0,  2.5,    0,   0.01),
         ],
         # ── Sección 2: Punto de diseño ───────────────────────────────────────
         "sliders_diseno": [
             ("os_tit",  "T\u2084\u209C [K]",   800, 1800, 1400,  5),
-            ("os_pi",   "\u03C0\u2082\u2083",  2,   30,   10,  0.1),
+            ("os_pi",   "\u03C0\u2082\u2083",  2,   30,   18,  0.1),
             ("os_G",    "G [kg/s]",         5,  200,   20,   1),
         ],
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
             ("os_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
-            ("os_ec",    "\u03B7 compresor",  0.6, 0.99, 0.80, 0.01),
+            ("os_ec",    "\u03B7 compresor",  0.6, 0.99, 0.92, 0.01),
             ("os_ecc",   "\u03B7 camara",     0.6, 0.99, 0.99, 0.01),
             ("os_et",    "\u03B7 turbina",    0.6, 0.99, 0.88, 0.01),
             ("os_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
@@ -158,16 +158,20 @@ ENGINE_CONFIGS = {
             p["tf_t0"] + 273.15, p["tf_p0"] * 1000,
             p["tf_mach"], p["tf_G"], p["tf_pi"], p["tf_tit"],
             p["tf_pifan"], p["tf_bpr"],
-            eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
+            eta_dif=p["tf_edif"], eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
+            eta_cc=p["tf_ecc"],
             eta_hpt=p["tf_ehpt"], eta_lpt=p["tf_elpt"],
+            eta_noz=p["tf_enoz"],
         ),
         "sweep_base": lambda p: {
             "T_amb": p["tf_t0"] + 273.15, "P_amb": p["tf_p0"] * 1000,
             "mach":p["tf_mach"],    "G":p["tf_G"],
             "pi_23":p["tf_pi"],     "tit":p["tf_tit"],
             "pi_fan":p["tf_pifan"], "bpr":p["tf_bpr"],
-            "eta_c":p["tf_ec"],     "eta_fan":p["tf_efan"],
+            "eta_dif":p["tf_edif"], "eta_c":p["tf_ec"], "eta_fan":p["tf_efan"],
+            "eta_cc":p["tf_ecc"],
             "eta_hpt":p["tf_ehpt"], "eta_lpt":p["tf_elpt"],
+            "eta_noz":p["tf_enoz"],
         },
     },
     "OneSpoolTurboprop": {
@@ -200,14 +204,18 @@ ENGINE_CONFIGS = {
             p["tp_t0"] + 273.15, p["tp_p0"] * 1000,
             p["tp_mach"], p["tp_G"], p["tp_pi"], p["tp_tit"],
             p["tp_Wh"] * 1000, p["tp_etam"],
-            eta_c=p["tp_ec"], eta_hpt=p["tp_ehpt"], eta_lpt=p["tp_elpt"],
+            eta_dif=p["tp_edif"], eta_c=p["tp_ec"], eta_cc=p["tp_ecc"],
+            eta_hpt=p["tp_ehpt"], eta_lpt=p["tp_elpt"],
+            eta_noz=p["tp_enoz"],
         ),
         "sweep_base": lambda p: {
             "T_amb": p["tp_t0"] + 273.15, "P_amb": p["tp_p0"] * 1000,
             "mach":p["tp_mach"],  "G":p["tp_G"],
             "pi_23":p["tp_pi"],   "tit":p["tp_tit"],
             "W_h":p["tp_Wh"]*1000, "eta_m":p["tp_etam"],
-            "eta_c":p["tp_ec"],   "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
+            "eta_dif":p["tp_edif"], "eta_c":p["tp_ec"], "eta_cc":p["tp_ecc"],
+            "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
+            "eta_noz":p["tp_enoz"],
         },
     },
 }
@@ -219,17 +227,26 @@ ALL_SLIDER_IDS = [
     for sid, *_ in cfg[section]
 ]
 
+# IDs que tienen label visible (val-{sid}) — solo vuelo y diseño,
+# porque los sliders de comp están ocultos sin Span de valor.
+ALL_LABEL_IDS = [
+    sid
+    for cfg in ENGINE_CONFIGS.values()
+    for section in ("sliders_vuelo", "sliders_diseno")
+    for sid, *_ in cfg[section]
+]
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  HELPERS UI
 # ══════════════════════════════════════════════════════════════════════════════
-
+# Inputs
 def make_slider(sid, label, mn, mx, dfl, stp):
     return html.Div([
         html.Div([
-            html.Span(label, style={"fontSize":"12px","color":C["dim"],
-                                    "fontFamily":C["head"],"letterSpacing":"1px"}),
-            html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],
-                                               "fontSize":"11px","color":C["accent"]}),
+            html.Span(label, style={"fontSize":"0.75rem","color":C["accent"],   # Variable
+                                    "fontFamily":C["mono"]}),
+            html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],  # Valor numérico
+                                               "fontSize":"0.75rem","color":C["accent"]}),
         ], style={"display":"flex","justifyContent":"space-between","marginBottom":"3px"}),
         dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
                    marks=None, tooltip={"always_visible":False}, className="mb-1"),
@@ -292,247 +309,406 @@ def _pv(df, st):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MOTOR 1 — OneSpoolEngine   Turborreactor Monoeje  (esquema mejorado)
+#  MOTOR 1 — OneSpoolEngine   Turborreactor Monoeje  (esquema 3D interactivo)
 # ══════════════════════════════════════════════════════════════════════════════
-#
-#  Geometria inspirada en seccion transversal real.
-#  Tobera convergente-divergente con garganta muy cerca de la salida (x=720)
-#  para que visualmente se lea como convergente simple.
-#
-#  Estaciones: St.0 x=30  St.2 x=130  St.3 x=365
-#              St.4 x=490 St.5 x=590  St.9 x=720
-#  Todas las lineas de estacion tienen la misma altura (y0=0.14, y1=0.86).
-#
 def _build_onespool(df):
     S, A = [], []
 
-    # ── Eje de simetria (referencia) ─────────────────────────────────────────
-    S.append(dict(type="line", x0=10, x1=800, y0=0.50, y1=0.50,
-                  line=dict(color=C["border"], width=0.5, dash="dot")))
+    # ── Eje de simetría ───────────────────────────────────────────────────────
+    # S.append(dict(type="line", x0=5, x1=715, y0=0.50, y1=0.50,
+    #              line=dict(color=C["border"], width=0.5, dash="dot")))
 
-    # ── RELLENOS DE ZONA (por debajo de la carcasa) ───────────────────────────
-
-    # Zona fria: difusor + compresor  (azul)
+    # ── Zona fría: difusor + compresor (azul) ─────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 20,0.50 "
-              "C 38,0.33 62,0.24 120,0.22 "
-              "L 365,0.22 L 365,0.78 "
-              "C 62,0.76 38,0.67 20,0.50 Z"),
-        fillcolor=_rgba("#4a90d9", 0.16),
+        path=("M 20,0.15 "
+              "C 32,0.10 58,0.13 110,0.13 "
+              "L 260,0.22 L 260,0.78 "
+              "L 110,0.87 "
+              "C 58,0.87 32,0.9 20,0.85 Z"),
+        fillcolor=_rgba("#4a90d9", 0.2),
         line=dict(color="rgba(0,0,0,0)", width=0),
         layer="below",
     ))
 
-    # Zona caliente: camara + turbina  (rojo/naranja)
+    # ── Zona caliente: cámara + turbina (rojo) ────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 365,0.22 L 590,0.24 "
-              "C 640,0.27 680,0.33 720,0.38 "
-              "L 720,0.62 "
-              "C 680,0.67 640,0.73 590,0.76 "
-              "L 365,0.78 Z"),
-        fillcolor=_rgba("#cc4400", 0.16),
+        path=("M 260,0.22 L 370,0.22 L 370,0.78 L 260,0.78 Z"),
+        fillcolor=_rgba("#e28800", 0.2),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="below",
+    ))
+    
+    S.append(dict(
+        type="path",
+        path=("M 370,0.22 L 472,0.1578 "
+              "L 472,0.8522 L 370,0.78 Z"),
+        fillcolor=_rgba("#b83232", 0.2),
         line=dict(color="rgba(0,0,0,0)", width=0),
         layer="below",
     ))
 
-    # Tobera CD  (morado)
+    # ── Zona tobera (morado) ──────────────────────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 720,0.38 C 745,0.36 768,0.355 790,0.37 "
-              "L 790,0.63 C 768,0.645 745,0.64 720,0.62 Z"),
-        fillcolor=_rgba("#7055aa", 0.18),
+        path=("M 472 0.1578"
+              "C 528,0.33 552,0.35 580,0.33 "
+              "C 598,0.31 618,0.29 630,0.30 "
+              "L 630,0.7 "
+              "C 618,0.71 598,0.69 580,0.67 "
+              "C 552,0.65 528,0.67 472 0.8422 Z"),
+
+        fillcolor=_rgba("#b83232", 0.2),
         line=dict(color="rgba(0,0,0,0)", width=0),
         layer="below",
     ))
 
-    # ── CARCASA EXTERIOR ──────────────────────────────────────────────────────
-    # Superior
+    # ── Banda 3D superior — difusor+compresor ─────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 20,0.50 "
-              "C 38,0.33 62,0.24 120,0.22 "
-              "L 590,0.22 "
-              "C 640,0.22 680,0.27 720,0.38 "
-              "C 745,0.36 768,0.355 790,0.37"),
+        path=("M 20,0.12 "
+              "C 32,0.06 58,0.08 110,0.10 "
+              "L 260,0.19 L 260,0.22 "
+              "L 110,0.13 "
+              "C 58,0.13 32,0.10 20,0.15 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+    # ── Banda 3D inferior — difusor+compresor ────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 20,0.88 "
+              "C 32,0.94 58,0.9 110,0.90 "
+              "L 260,0.81 L 260,0.78 "
+              "L 110,0.87 "
+              "C 58,0.87 32,0.9 20,0.85 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+    # ── Banda 3D superior — zona caliente ────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 260,0.19 L 370,0.19 L 472 0.1278"
+              "L 472,0.1578 L 370,0.22 L 260,0.22 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+    # ── Banda 3D inferior — zona caliente ────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 260,0.81 L 370,0.81 L 472,0.8722"
+              "L 472,0.8522 L 370,0.78 L 260,0.78 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+    # ── Banda 3D superior — tobera ───────────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 472 0.1278"
+              "C 528,0.30 552,0.32 580,0.3 "
+              "C 598,0.28 618,0.26 630,0.27"
+              "L 630,0.30 "
+              "C 618,0.29 598,0.31 580,0.33 "
+              "C 552,0.35 528,0.33 472,0.1578 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+    # ── Banda 3D inferior — tobera ───────────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 472 0.8722 "
+        "C 528,0.70 552,0.68 580,0.70 "
+        "C 598,0.72 618,0.74 630,0.73 "
+        "L 630,0.70 "
+        "C 618,0.71 598,0.69 580,0.67 "
+        "C 552,0.65 528,0.67 472,0.8422 Z"),
+        fillcolor=_rgba("#888888", 0.32),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
+    ))
+
+    # ── Cara exterior superior ────────────────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 20,0.12 "
+              "C 32,0.06 58,0.10 110,0.10 "
+              "L 260,0.19 L 370,0.19 L 472 0.1278"
+              "C 528,0.30 552,0.32 580,0.3 "
+              "C 598,0.28 618,0.26 630,0.27"),
         fillcolor="rgba(0,0,0,0)",
-        line=dict(color="#444444", width=2.2),
+        line=dict(color="#2a2a2a", width=1.4),
     ))
-    # Inferior (espejo)
+    # ── Cara interior superior ────────────────────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 20,0.50 "
-              "C 38,0.67 62,0.76 120,0.78 "
-              "L 590,0.78 "
-              "C 640,0.78 680,0.73 720,0.62 "
-              "C 745,0.64 768,0.645 790,0.63"),
+        path=("M 20,0.15 "
+              "C 32,0.10 58,0.13 110,0.13 "
+              "L 260,0.22 L 370,0.22 L 472 0.1578"
+              "C 528,0.33 552,0.35 580,0.33 "
+              "C 598,0.31 618,0.29 630,0.30"),
         fillcolor="rgba(0,0,0,0)",
-        line=dict(color="#444444", width=2.2),
+        line=dict(color="#555555", width=1.4),
+    ))
+    # ── Cierre vertical derecho — carcasa superior abierta ────────────────────
+    S.append(dict(
+        type="line", x0=630, x1=630, y0=0.27, y1=0.30,
+        line=dict(color="#2a2a2a", width=1.4),
     ))
 
-    # ── CONO DE ENTRADA (ojiva) ───────────────────────────────────────────────
+    S.append(dict(
+        type="line", x0=20, x1=20, y0=0.12, y1=0.15,
+        line=dict(color="#2a2a2a", width=1.4),
+    ))
+    # ── Cara exterior inferior ────────────────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 20,0.88 "
+        "C 32,0.94 58,0.90 110,0.90 "
+        "L 260,0.81 L 370,0.81 L 472 0.8722 "
+        "C 528,0.70 552,0.68 580,0.70 "
+        "C 598,0.72 618,0.74 630,0.73"),
+        fillcolor="rgba(0,0,0,0)",
+        line=dict(color="#2a2a2a", width=1.4),
+    ))
+    # ── Cara interior inferior ────────────────────────────────────────────────
+    S.append(dict(
+        type="path",
+        path=("M 20,0.85 "
+        "C 32,0.90 58,0.87 110,0.87 "
+        "L 260,0.78 L 370,0.78 L 472 0.8422 "
+        "C 528,0.67 552,0.65 580,0.67 "
+        "C 598,0.69 618,0.71 630,0.70"),
+        fillcolor="rgba(0,0,0,0)",
+        line=dict(color="#555555", width=1.4),
+    ))
+    # ── Cierre vertical derecho — carcasa inferior abierta ────────────────────
+    S.append(dict(
+        type="line", x0=630, x1=630, y0=0.7, y1=0.73,
+        line=dict(color="#2a2a2a", width=1.4),
+    ))
+    # ── Cierre vertical izquierdo — carcasa inferior abierta ────────────────────
+    S.append(dict(
+        type="line", x0=20, x1=20, y0=0.85, y1=0.88,
+        line=dict(color="#2a2a2a", width=1.4),
+    ))
+
+    # ── Ojiva ─────────────────────────────────────────────────────────────────
     S.append(dict(
         type="path",
         path=("M 20,0.50 "
-              "C 32,0.45 52,0.43 78,0.42 "
-              "L 78,0.58 "
-              "C 52,0.57 32,0.55 20,0.50 Z"),
-        fillcolor=_rgba("#999999", 0.55),
-        line=dict(color="#666666", width=1.3),
+              "C 33,0.44 56,0.42 90,0.41 "
+              "L 90,0.59 "
+              "C 56,0.58 33,0.56 20,0.50 Z"),
+        fillcolor=_rgba("#aaaaaa", 0.65),
+        line=dict(color="#444444", width=1.6),
+        layer="above",
+    ))
+    S.append(dict(
+        type="path",
+        path=("M 22,0.50 C 35,0.46 57,0.44 84,0.43 "
+              "L 84,0.46 C 57,0.47 35,0.48 22,0.50 Z"),
+        fillcolor=_rgba("#ffffff", 0.40),
+        line=dict(color="rgba(0,0,0,0)", width=0),
         layer="above",
     ))
 
-    # ── EJE MECANICO DEL MOTOR ────────────────────────────────────────────────
     S.append(dict(
-        type="rect", x0=78, x1=610, y0=0.466, y1=0.534,
-        fillcolor=_rgba("#888888", 0.45),
-        line=dict(color="#777777", width=0.8),
+        type="path",
+        path=("M 630,0.50 "
+            "C 617,0.44 594,0.42 560,0.41 "
+            "L 560,0.59 "
+            "C 594,0.58 617,0.56 630,0.50 Z"),
+        fillcolor=_rgba("#aaaaaa", 0.65),
+        line=dict(color="#444444", width=1.6),
         layer="above",
     ))
 
-    # ── PALAS DEL COMPRESOR (lineas diagonales, multi-etapa) ─────────────────
-    # x: 130 a 358, paso 18
-    for xi in range(135, 360, 18):
-        S.append(dict(
-            type="line", x0=xi, x1=xi + 7, y0=0.534, y1=0.225,
-            line=dict(color=_rgba("#1a4d8f", 0.65), width=1.1),
-        ))
-        S.append(dict(
-            type="line", x0=xi, x1=xi + 7, y0=0.466, y1=0.775,
-            line=dict(color=_rgba("#1a4d8f", 0.65), width=1.1),
-        ))
-
-    # ── CAMARA DE COMBUSTION ──────────────────────────────────────────────────
-    # Pared anular interior
     S.append(dict(
         type="path",
-        path="M 370,0.30 L 370,0.70 L 485,0.70 L 485,0.30 Z",
-        fillcolor=_rgba("#b83232", 0.10),
-        line=dict(color="#b83232", width=1.0),
-        layer="below",
-    ))
-    # Llama superior
-    S.append(dict(
-        type="path",
-        path=("M 382,0.43 "
-              "C 402,0.38 432,0.36 462,0.40 "
-              "C 432,0.44 402,0.46 382,0.43 Z"),
-        fillcolor=_rgba("#ff6600", 0.65),
-        line=dict(color="#ff8800", width=0.5),
+        path=("M 628,0.50 C 615,0.46 593,0.44 566,0.43 "
+            "L 566,0.46 C 593,0.47 615,0.48 628,0.50 Z"),
+        fillcolor=_rgba("#ffffff", 0.40),
+        line=dict(color="rgba(0,0,0,0)", width=0),
         layer="above",
     ))
-    # Llama inferior
+
+    # ── Eje mecánico (radio mayor) ────────────────────────────────────────────
     S.append(dict(
-        type="path",
-        path=("M 382,0.57 "
-              "C 402,0.54 432,0.56 462,0.60 "
-              "C 432,0.64 402,0.62 382,0.57 Z"),
-        fillcolor=_rgba("#ff6600", 0.65),
-        line=dict(color="#ff8800", width=0.5),
+        type="rect", x0=90, x1=560, y0=0.447, y1=0.553,
+        fillcolor=_rgba("#999999", 0.60),
+        line=dict(color="#555555", width=1.3),
         layer="above",
     ))
-    # Inyector de combustible
-    S.append(dict(type="line", x0=372, x1=385, y0=0.35, y1=0.43,
-                  line=dict(color="#cc8800", width=2.0)))
-    S.append(dict(type="line", x0=372, x1=385, y0=0.65, y1=0.57,
-                  line=dict(color="#cc8800", width=2.0)))
-
-    # ── PALAS DE LA TURBINA ───────────────────────────────────────────────────
-    # x: 495 a 582, paso 18
-    for xi in range(498, 582, 18):
-        S.append(dict(
-            type="line", x0=xi + 7, x1=xi, y0=0.534, y1=0.245,
-            line=dict(color=_rgba("#cc5500", 0.70), width=1.2),
-        ))
-        S.append(dict(
-            type="line", x0=xi + 7, x1=xi, y0=0.466, y1=0.755,
-            line=dict(color=_rgba("#cc5500", 0.70), width=1.2),
-        ))
-
-    # ── GARGANTA DE LA TOBERA (linea de minimo area) ──────────────────────────
     S.append(dict(
-        type="line", x0=720, x1=720, y0=0.38, y1=0.62,
-        line=dict(color="#7055aa", width=1.0, dash="dash"),
+        type="rect", x0=90, x1=560, y0=0.447, y1=0.468,
+        fillcolor=_rgba("#ffffff", 0.28),
+        line=dict(color="rgba(0,0,0,0)", width=0),
+        layer="above",
     ))
 
-    # ── CHORRO DE ESCAPE ──────────────────────────────────────────────────────
+    # ── Sub-eje compresor→turbina (dentro de la cámara) ───────────────────────
     S.append(dict(
-        type="path",
-        path=("M 790,0.37 C 820,0.38 855,0.42 875,0.50 "
-              "C 855,0.58 820,0.62 790,0.63 Z"),
-        fillcolor=_rgba("#ff5500", 0.28),
-        line=dict(color="#ff7700", width=0.7),
-        layer="below",
+        type="rect", x0=120, x1=464, y0=0.453, y1=0.547,
+        fillcolor=_rgba("#777777", 0.75),
+        line=dict(color="#444444", width=1.1),
+        layer="above",
     ))
+
+    # ── Palas del compresor (ancho→estrecho, línea recta) ─────────────────────
+    for xi in range(118, 258, 16):
+        t = (xi - 110) / (260 - 110)
+        y_top = 0.13 + t * 0.09
+        y_bot = 0.87 - t * 0.09
+        S.append(dict(
+            type="line", x0=xi, x1=xi + 6, y0=0.553, y1=y_top,
+            line=dict(color=_rgba("#1a4d8f", 0.72), width=4),
+        ))
+        S.append(dict(
+            type="line", x0=xi, x1=xi + 6, y0=0.447, y1=y_bot,
+            line=dict(color=_rgba("#1a4d8f", 0.72), width=4),
+        ))
+
+    # ── Cámara de combustión (pared recta) ────────────────────────────────────
     S.append(dict(
         type="path",
-        path=("M 790,0.42 C 818,0.44 845,0.47 865,0.50 "
-              "C 845,0.53 818,0.56 790,0.58 Z"),
-        fillcolor=_rgba("#ffaa00", 0.42),
-        line=dict(color="#ffcc00", width=0.5),
+        path="M 260,0.30 L 260,0.70 L 276,0.60 L 354,0.60 L 370,0.70 L 370,0.30 L 354,0.4, L 276,0.4 Z",
+        fillcolor=_rgba("#999999", 0.60),
+        line=dict(color="#555555", width=1.3),
         layer="below",
     ))
 
-    # ── LINEAS DE ESTACION (misma altura todas) ───────────────────────────────
-    ST_Y0, ST_Y1 = 0.14, 0.86
+    # ── Palas de la turbina (estrecha→ancha, más corta) ───────────────────────
+    for xi in range(377, 472, 16):
+        t = (xi - 370) / (470 - 370)
+        y_top = 0.22 - t * 0.06
+        y_bot = 0.78 + t * 0.06
+        S.append(dict(
+            type="line", x0=xi + 6, x1=xi, y0=0.553, y1=y_top,
+            line=dict(color=_rgba("#b83232", 0.78), width=4),
+        ))
+        S.append(dict(
+            type="line", x0=xi + 6, x1=xi, y0=0.447, y1=y_bot,
+            line=dict(color=_rgba("#b83232", 0.78), width=4),
+        ))
+
+    # ── Líneas de estación ────────────────────────────────────────────────────
+    ST_Y0, ST_Y1 = 0.02, 0.98
     STATIONS = [
-        (30,  "0"),
-        (130, "2"),
-        (365, "3"),
-        (490, "4"),
-        (590, "5"),
-        (720, "9"),
+        (20,  "0"),
+        (110, "2"),
+        (260, "3"),
+        (370, "4"),
+        (450, "5"),
+        (552, "8"),
+        (630, "9"),
     ]
     for sx, slbl in STATIONS:
         S.append(dict(
             type="line", x0=sx, x1=sx, y0=ST_Y0, y1=ST_Y1,
-            line=dict(color=C["border"], width=0.9, dash="dot"),
+            line=dict(color=C["border"], width=0.8, dash="dot"),
         ))
         A.append(dict(
-            x=sx, y=ST_Y0 - 0.05,
+            x=sx, y=ST_Y0 - 0.02,
             text=f"<b>{slbl}</b>",
             showarrow=False,
-            font=dict(size=8, color=C["dim"], family="Share Tech Mono"),
+            font=dict(size=9, color=C["dim"], family="mono"),
             xref="x", yref="y", yanchor="top",
         ))
 
-    # ── ETIQUETAS DE COMPONENTES (en español) ─────────────────────────────────
-    COMP_LABELS = [
-        ( 80,  "DIFUSOR",    "#4a7abf"),
-        (247,  "COMPRESOR",  "#1a4d8f"),
-        (427,  "CAMARA",     "#b83232"),
-        (540,  "TURBINA",    "#cc5500"),
-        (655,  "TOBERA",     "#7055aa"),
-    ]
-    for cx, name, col in COMP_LABELS:
-        A.append(dict(
-            x=cx, y=ST_Y1 + 0.05,
-            text=f"<b>{name}</b>",
-            showarrow=False,
-            font=dict(size=8, color=col, family="Share Tech Mono"),
-            xref="x", yref="y", yanchor="bottom",
-        ))
-
-    # ── FIGURA ────────────────────────────────────────────────────────────────
+    # ── Figura base ───────────────────────────────────────────────────────────
     fig = go.Figure()
     fig.update_layout(
         shapes=S,
         annotations=A,
         plot_bgcolor=C["panel"],
         paper_bgcolor=C["panel"],
-        margin=dict(l=0, r=0, t=0, b=0),
-        height=130,
-        xaxis=dict(range=[0, 870], visible=False, fixedrange=True),
+        autosize=True,
+        margin=dict(l=0, r=0, t=10, b=10),
+        height=210,
+        xaxis=dict(domain=[0.05, 0.93],range=[0, 635], visible=False, fixedrange=True),
         yaxis=dict(range=[0, 1],   visible=False, fixedrange=True),
         showlegend=False,
-    )
-    return dcc.Graph(
-        figure=fig,
-        config={"displayModeBar": False, "staticPlot": True},
-        style={"height": "100%", "width": "100%"},
+        hovermode="closest",
     )
 
+    # ── Zonas interactivas (scatter invisible para hover y click) ─────────────
+    ZONES = [
+        ("difusor",   "DIFUSOR",    110,  2),
+        ("compresor", "COMPRESOR",  260, 3),
+        ("camara",    "CÁMARA CC",  370, 4),
+        ("turbina",   "TURBINA",    470, 5),
+        ("tobera",    "TOBERA",     630, 9),
+    ]
+    zone_colors = {
+        "difusor":   "#4a7abf",
+        "compresor": "#1a4d8f",
+        "camara":    "#b83232",
+        "turbina":   "#cc5500",
+        "tobera":    "#7055aa",
+    }
+
+    for i, (zone_id, label, xc, st) in enumerate(ZONES):
+        T_val = _tv(df, st)
+        P_val = _pv(df, st)
+        t_str = f"{T_val:.1f} K"   if T_val is not None else "—"
+        p_str = f"{P_val:.2f} kPa" if P_val is not None else "—"
+        col   = zone_colors[zone_id]
+ 
+        # ── Cable ficticio: línea de puntos desde el componente hasta el borde ──
+        # Usamos paper x para el extremo derecho (1.0 = borde del plot)
+        # y data x para el origen en el componente.
+        cable_y_val = 0.15 + i * 0.14   # escalonado verticalmente: 0.15, 0.29, 0.43, 0.57, 0.71
+        # Segmento horizontal desde componente hasta borde derecho del diagrama
+        S.append(dict(
+            type="line",
+            x0=xc, x1=635,
+            y0=cable_y_val, y1=cable_y_val,
+            line=dict(color=col, width=1, dash="dot"),
+            layer="above",
+        ))
+        # Punto de sensor en el componente
+        S.append(dict(
+            type="circle",
+            x0=xc - 4, x1=xc + 4,
+            y0=cable_y_val - 0.02, y1=cable_y_val + 0.02,
+            fillcolor=col,
+            line=dict(color=col, width=1),
+            layer="above",
+        ))
+        # Etiqueta del cable en el borde
+        A.append(dict(
+            x=635, y=cable_y_val,
+            text=f"<b style='color:{col}'>●</b>",
+            showarrow=False,
+            font=dict(size=10, color=col, family=C["mono"]),
+            xref="x", yref="y",
+            xanchor="left",
+        ))
+ 
+        fig.add_trace(go.Scatter(
+            x=[xc], y=[cable_y_val],
+            mode="markers",
+            marker=dict(size=36, color="rgba(0,0,0,0)",
+                        line=dict(color="rgba(0,0,0,0)", width=0)),
+            customdata=[[zone_id, label, st, t_str, p_str]],
+            hoverinfo="none",
+            hovertemplate=None,
+            name=zone_id,
+            showlegend=False,
+        ))
+ 
+    return dcc.Graph(
+        id="onespool-diagram",
+        figure=fig,
+        config={"displayModeBar": False, "staticPlot": False},
+        style={"height": "100%", "width": "100%"},
+    )
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  MOTORES 2-4  (version original: cajas rectangulares, sin cambios)
@@ -676,14 +852,13 @@ def build_engine_diagram(engine_type: str, df=None):
 def menu_engine_card(eid, cfg):
     return html.Div([
         html.Div(style={"height":"3px","background":cfg["color"],"marginBottom":"5px"}),
-        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"25px",
+        html.Div(cfg["label"], style={"fontFamily":C["mono"],"fontWeight":"900","fontSize":"1.9vw", # Turborreactor monoeje
                                        "letterSpacing":"2px","textTransform":"uppercase",
                                        "color":C["text"],"marginBottom":"2px","color":cfg["color"]}),
-        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"14px",
-                                          "color":cfg["color"],"letterSpacing":"2px",
+        html.Div(cfg["subtitle"], style={"fontFamily":C["mono"],"fontSize":"1.2vw", # Single Spool Turbojet
+                                          "color":cfg["color"],
                                           "marginBottom":"12px"}),
-        html.Div(build_engine_diagram(eid, df=None),
-                style={"marginBottom":"10px","overflow":"hidden","lineHeight":"0"},),                  
+        html.Div(html.Img(src="/assets/onespool2.svg", style={"width":"100%"})),                  
         html.Button("DISEÑO", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",
@@ -702,27 +877,27 @@ menu_screen = html.Div([
             #html.Div("REF-DOC-SIM-001", style={"fontFamily":C["mono"],"fontSize":"9px",
             #                                    "color":C["border2"],"letterSpacing":"4px",
             #                                    "marginBottom":"10px"}),
-            html.Div("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                        "fontSize":"50px","letterSpacing":"8px",
+            html.Div("PROP-LAB", style={"fontFamily":C["head"],"fontWeight":"800",
+                                        "fontSize":"3.6vw","letterSpacing":"4px",
                                         "color":C["accent"],"lineHeight":"1","marginBottom":"8px","marginTop":"20px"}),
             html.Div("SIMULADOR DE AERORREACTORES", style={"fontFamily":C["mono"],
-                                                            "fontSize":"14px","color":C["dim"],
-                                                            "letterSpacing":"6px","marginBottom":"0px"}),
-            html.P("Selecciona el tipo de motor para comenzar la fase de diseño",
-                   style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"14px","marginTop":"20px","color":C["dim"]}),
-        ], style={"textAlign":"center"}),
+                                                            "fontSize":"1vw","color":C["dim"],
+                                                            "letterSpacing":"6px","marginBottom":"1.2vw"}),
+            #html.P("Selecciona el tipo de motor para comenzar la fase de diseño",
+            #       style={"fontFamily":C["head"],"fontWeight":"300","fontSize":"1vepx","marginTop":"20px","color":C["dim"]}),
+        ], style={"textAlign":"center","background":C["bg"]}),
     ]),
     dbc.Container(
     html.Div([menu_engine_card(eid, cfg)
             for eid, cfg in ENGINE_CONFIGS.items()],
         style={"display": "grid","gridTemplateColumns": "repeat(2, 1fr)","gap": "20px",
             "justifyContent": "center","maxWidth": "2000px","margin": "0 auto"}),
-    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 100px"}),
+    fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 5%"}),
     html.Div("PROP-Lab v4.2  ·  components.py  ·  2025", style={
         "textAlign":"center","fontFamily":C["mono"],"fontSize":"14px",
         "color":C["border"],"padding":"32px","marginTop":"16px",
     }),
-], id="screen-menu", style={"minHeight":"100vh","background":C["bg"],
+], id="screen-menu", style={"minHeight":"100vh","background":C["bg"],"backgroundImage":"none",
                               "position":"relative","zIndex":"1"})
 
 
@@ -731,20 +906,12 @@ menu_screen = html.Div([
 # ══════════════════════════════════════════════════════════════════════════════
 
 def section_head(title):
-    """Cabecera de sección dentro del panel de sliders."""
-    return html.Div(title, style={
-        "fontSize":"12px", "fontFamily":C["head"], "fontWeight":"700",
-        "letterSpacing":"3px", "textTransform":"uppercase",
-        "color":C["border2"], "padding":"10px 0 4px 0",
-        "borderTop":f"2px solid {C['text']}", 
-        "marginTop":"10px", "marginBottom": "10px",
-    })
+    return html.Div(title, className="section-head")
 
 all_slider_groups = []
 SECTION_LABELS = {
-    "sliders_vuelo":  "COND. VUELO",
-    "sliders_diseno": "PTO. DISEÑO",
-    "sliders_comp":   "COMPONENTES",
+    "sliders_vuelo":  "CONDICIONES DE VUELO",
+    "sliders_diseno": "PUNTO DE DISEÑO",
 }
 for eid, cfg in ENGINE_CONFIGS.items():
     group = []
@@ -752,15 +919,44 @@ for eid, cfg in ENGINE_CONFIGS.items():
         group.append(section_head(section_title))
         for sid, lbl, mn, mx, dfl, stp in cfg[section_key]:
             group.append(make_slider(sid, lbl, mn, mx, dfl, stp))
+    for sid, lbl, mn, mx, dfl, stp in cfg["sliders_comp"]:
+        group.append(
+            html.Div(
+                dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
+                           marks=None, tooltip={"always_visible":False}),
+                style={"display":"none"}
+            )
+        )
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
 
-PANEL_L = {"background":C["panel"],"borderRight":f"1px solid {C['border']}",
-            "paddingLeft":"14px","paddingRight":"14px",
-            "overflowY":"auto","height":"calc(100vh - 80px)"}
-PANEL_R = {"background":C["panel"],"borderLeft":f"1px solid {C['border']}",
-            "paddingLeft":"12px","paddingRight":"12px",
-            "overflowY":"auto","height":"calc(100vh - 80px)"}
-PANEL_C = {"overflowY":"auto","height":"calc(100vh - 80px)","paddingRight":"0"}
+PANEL_INPUTS = {
+    "background": C["panel"],
+    "border": f"1px solid {C['border']}",
+    "paddingTop":"5px","paddingLeft": "10px", "paddingRight": "10px",
+    "overflowY": "auto",
+    "height": "100vh",
+}
+PANEL_OUTPUTS_L = {
+    "background": C["panel"],
+    "border": f"1px solid {C['border']}",
+    "paddingLeft": "10px", "paddingRight": "10px",
+    "overflowY": "auto",
+    "height": "30vh",
+}
+PANEL_DIAGRAM = {
+    "background": C["panel"],
+    "border": f"1px solid {C['border']}",
+    "paddingLeft": "8px", "paddingRight": "8px",
+    "height": "40vh",
+    "overflow": "hidden",
+}
+PANEL_GRAPHS = {
+    "background": C["panel"],
+    "border": f"1px solid {C['border']}",
+    "paddingLeft": "8px", "paddingRight": "8px",
+    "overflowY": "auto",
+    "height": "calc(100vh - 80px)",
+}
 
 sim_screen = html.Div([
 
@@ -781,42 +977,78 @@ sim_screen = html.Div([
 
     html.Div(id="alert-tit", style={"display":"none"}, className="alert-tit mx-3 mt-2"),
 
-    dbc.Container([
-        dbc.Row([
-            # Izquierda: sliders
-            dbc.Col([
-                html.Div(id="sim-eng-title", className="section-head mt-3"),
+    # ── Cuerpo — flex row con 3 columnas ─────────────────────────────────────
+    html.Div([
+
+        # ── COL A (25%) — izquierda: inputs arriba, telemetría abajo ─────────
+        html.Div([
+
+            # Panel A1 — sliders
+            html.Div([
                 html.Div(all_slider_groups),
-            ], width=3, style=PANEL_L),
+            ], style=PANEL_INPUTS),
 
-            # Centro: métricas + esquema SVG + gráficas
-            dbc.Col([
-                # Esquema SVG del motor
+            html.Div(style={"height":"6px"}),
+
+        ], style={"width":"20%","display":"flex","flexDirection":"column",
+                  "paddingRight":"6px"}),
+
+        # ── COL B (37.5%) — centro: diagrama arriba, métricas abajo ─────────
+        html.Div([
+
+            # Panel B1 — diagrama del motor
+            html.Div([
+                html.Div(id="sim-eng-title", className="section-head",
+                         style={"padding":"8px 0 4px 0"}),
                 html.Div(id="engine-diagram",
-                         className="graph-card mb-1",
-                         style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
+                         style={"lineHeight":"0","overflow":"hidden",
+                                "height":"calc(35vh - 30px)"}),
+            ], style=PANEL_DIAGRAM),
+
+            # Panel B2 — telemetría del componente clicado
+            html.Div([
+                html.Div("TELEMETRÍA", className="section-head",
+                         style={"padding":"8px 0 4px 0"}),
+                html.Div(id="comp-tele-panel"),
+            ], style=PANEL_OUTPUTS_L),
+
+            # Métricas debajo del diagrama
+            html.Div([
                 dbc.Row([
-                    dbc.Col(metric_card("Empuje neto",    "thrust","kN",    "good"), width=4),
-                    dbc.Col(metric_card("TSFC",           "tsfc",  "mg/Ns", ""),      width=4),
-                    dbc.Col(metric_card("Combustible",    "fuel",   "kg/s","warn"),width=4),
-                ], className="mt-3 mb-1 g-1"),
-                dbc.Row([
-                    dbc.Col(html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
-                    dbc.Col(html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False}),
-                                    className="graph-card"), width=6),
+                    dbc.Col(metric_card("Empuje neto",        "thrust","kN",   "good"), width=4),
+                    dbc.Col(metric_card("Consumo específico", "tsfc",  "mg/Ns",""),     width=4),
+                    dbc.Col(metric_card("Combustible",        "fuel",  "kg/s", "warn"), width=4),
+                ], className="g-1 mt-2"),
+            ], style={"height":"calc(25vh - 86px)","paddingTop":"4px"}),
 
-                ], className="g-1 mb-1"),
-            ], width=7, style=PANEL_C),
+        ], style={"width":"50%","paddingLeft":"6px","paddingRight":"6px",
+                  "display":"flex","flexDirection":"column"}),
 
-            # Derecha: telemetría
-            dbc.Col([
-                html.Div("Telemetria", className="section-head mt-3"),
-                html.Table(id="tele-table", className="tele-table w-100"),
-            ], width=2, style=PANEL_R),
+        # ── COL C (37.5%) — derecha: botón ACTUACIONES + gráficas ────────────
+        html.Div([
+            # Panel C — gráficas una debajo de la otra
+            html.Div([
+                html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}),
+                         style={"marginBottom":"4px"}),
+                html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False})),
+            ], style=PANEL_GRAPHS),
+            # Botón ACTUACIONES (sin funcionalidad por ahora)
+            html.Button("ACTUACIONES", id="btn-actuaciones", n_clicks=0, style={
+                "background":"transparent","border":f"1px solid {C['border']}",
+                "color":C["accent"],"fontFamily":C["head"],"fontWeight":"700",
+                "fontSize":"12px","letterSpacing":"3px","padding":"7px 0",
+                "cursor":"pointer","width":"100%","textTransform":"uppercase",
+                "marginBottom":"6px",
+            }),
+        ], style={"width":"30%","paddingLeft":"6px",
+                  "display":"flex","flexDirection":"column"}),
 
-        ], className="g-0"),
-    ], fluid=True, style={"padding":"0"}),
+    ], style={
+        "display":"flex","flexDirection":"row",
+        "padding":"6px 10px",
+        "height":"calc(100vh - 80px)",
+        "overflow":"hidden",
+    }),
 
     html.Div([
         html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
@@ -833,6 +1065,7 @@ sim_screen = html.Div([
 
 app.layout = html.Div([
     dcc.Store(id="active-engine", data=None),
+    dcc.Store(id="eta-override-store", data={}),
     menu_screen,
     sim_screen,
 ], style={"background":C["bg"]})
@@ -897,12 +1130,12 @@ _SLIDER_STEP = {
 }
 
 @app.callback(
-    *[Output(f"val-{sid}", "children") for sid in ALL_SLIDER_IDS],
-    *[Input(f"sl-{sid}",   "value")    for sid in ALL_SLIDER_IDS],
+    *[Output(f"val-{sid}", "children") for sid in ALL_LABEL_IDS],
+    *[Input(f"sl-{sid}",   "value")    for sid in ALL_LABEL_IDS],
 )
 def update_labels(*vals):
     out = []
-    for sid, v in zip(ALL_SLIDER_IDS, vals):
+    for sid, v in zip(ALL_LABEL_IDS, vals):
         if v is None:
             out.append(""); continue
         stp = _SLIDER_STEP.get(sid, 1)
@@ -921,14 +1154,14 @@ def update_labels(*vals):
     Output("m-fuel",          "children"),
     Output("graph-ts",        "figure"),
     Output("graph-comp",      "figure"),
-    Output("tele-table",      "children"),
     Output("alert-tit",       "children"),
     Output("alert-tit",       "style"),
     Output("engine-diagram",  "children"),
     Input("active-engine", "data"),
+    Input("eta-override-store",  "data"),
     *[Input(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
 )
-def run_simulation(engine_type, *all_vals):
+def run_simulation(engine_type, eta_overrides, *all_vals):
     if not engine_type:
         raise dash.exceptions.PreventUpdate
 
@@ -941,6 +1174,12 @@ def run_simulation(engine_type, *all_vals):
         for sid, _, _, _, default, _ in cfg[section]:
             idx = ALL_SLIDER_IDS.index(sid)
             p[sid] = all_vals[idx] if all_vals[idx] is not None else default
+        if eta_overrides is None:
+            eta_overrides = {}
+        if engine_type == "OneSpoolEngine":
+            for sid, val in eta_overrides.items():
+                if val is not None and sid in p:
+                    p[sid] = float(val)
 
     # Error path: devuelve exactamente 15 valores (7 métricas + 4 figs + tabla + msg + style + diagram)
     def _err(msg_str):
@@ -949,7 +1188,7 @@ def run_simulation(engine_type, *all_vals):
                        html.Td(msg_str[:80], className="tele-val")])]
         ed = html.Div(msg_str[:120], style={"padding":"8px","fontFamily":C["mono"],
                                              "fontSize":"10px","color":C["accent2"]})
-        return ["--"]*7 + [ef,ef, et, msg_str, {"display":"block"}, ed]
+        return ["--"]*3 + [ef,ef, msg_str, {"display":"block"}, ed]
 
     try:
         r = cfg["runner"](p)
@@ -966,36 +1205,91 @@ def run_simulation(engine_type, *all_vals):
     ]
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────
-    Pt0 = max(r["Pt0_kPa"], 0.001)
-    Pt3 = max(r["Pt3_kPa"], 0.001)
-    T1,T2,T3,T4 = r["T0_K"], r["Tt3_K"], r["Tt4_K"], r["Tt5_K"]
-    s1=0; s2=-0.3*np.log(Pt3/Pt0); s3=s2
-    s4 = s3 + 0.4*np.log(max(T3,1)/max(T4,1))
+    # Entropía relativa: Δs = cp·ln(T2/T1) - R·ln(P2/P1)  [kJ/kg·K]
+    # Estaciones: 0(estática) → 0t(ram) → 2t(dif) → 3t(comp) → 4t(cc)
+    #             → 5t(turb) → 9(tobera salida) → 0(cierre)
+    _cp = 1.0043   # kJ/kg·K
+    _R  = 0.2871   # kJ/kg·K
+
+    def _ds(T1, P1, T2, P2):
+        """Incremento de entropía entre dos estados [kJ/kg·K]."""
+        return _cp * np.log(max(T2,1)/max(T1,1)) - _R * np.log(max(P2,0.001)/max(P1,0.001))
+
+    df_st = r.get("df")
+
+    # Recoge T y P de cada estación desde el DataFrame de simulación
+    def _st(station):
+        try:
+            T = float(df_st.loc[station, "T"])
+            P = float(df_st.loc[station, "P"]) / 1000   # Pa → kPa
+            return T, P
+        except Exception:
+            return None, None
+
+    T0s,  P0s  = r["T0_K"],  r["P0_kPa"]    # estática entrada (0)
+    T0t,  P0t  = _st(0)                       # estación 0 en df = 2t (difusor entrada)
+    T2t,  P2t  = _st(2)                       # salida difusor
+    T3t,  P3t  = _st(3)                       # salida compresor
+    T4t,  P4t  = _st(4)                       # salida cámara (TIT)
+    T5t,  P5t  = _st(5)                       # salida turbina
+    T9,   P9   = _st(9)                       # salida tobera (estática)
+
+    # Fallback si alguna estación no está en el df
+    if T2t  is None: T2t,  P2t  = r["T0_K"],   r["Pt0_kPa"]
+    if T3t  is None: T3t,  P3t  = r["Tt3_K"],  r["Pt3_kPa"]
+    if T4t  is None: T4t,  P4t  = r["Tt4_K"],  r["Pt3_kPa"]
+    if T5t  is None: T5t,  P5t  = r["Tt5_K"],  r["Pt3_kPa"]
+    if T9   is None: T9,   P9   = r["Tt5_K"],  r["P0_kPa"]
+
+    # Entropía acumulada [kJ/kg·K] — s=0 en el estado estático de entrada
+    s0s  = 0.0
+    s0t  = s0s + _ds(T0s, P0s, T2t, P2t)      # ram: compresión isentrópica ideal
+    s2t  = s0t + _ds(T2t, P2t, T2t, P2t)      # difusor (mismo punto, sin irreversibilidad adicional)
+    s3t  = s2t + _ds(T2t, P2t, T3t, P3t)      # compresor (irreversible → s aumenta)
+    s4t  = s3t + _ds(T3t, P3t, T4t, P4t)      # cámara combustión (isobara → s sube por calor)
+    s5t  = s4t + _ds(T4t, P4t, T5t, P5t)      # turbina (irreversible → s aumenta un poco)
+    s9   = s5t + _ds(T5t, P5t, T9,  P9)       # expansión en tobera
+
+    # Puntos del ciclo (cierra en 0s)
+    ss = [s0s,  s0t,  s3t,  s4t,  s5t,  s9,   s0s]
+    Ts = [T0s,  T2t,  T3t,  T4t,  T5t,  T9,   T0s]
+    labels = ["[0] Entrada", "[2t] Difusor", "[3t] Compresor",
+              "[4t] TIT", "[5t] Turbina", "[9] Tobera", ""]
+
     fig_ts = go.Figure()
+    # Área del ciclo
     fig_ts.add_trace(go.Scatter(
-        x=[s1,s2,s3,s4,s1], y=[T1,T2,T3,T4,T1], mode="lines",
+        x=ss, y=Ts, mode="lines",
         line=dict(color=color, width=0), fill="toself",
         fillcolor=_rgba(color, 0.10),
         showlegend=False, hoverinfo="skip",
     ))
+    # Línea del ciclo
     fig_ts.add_trace(go.Scatter(
-        x=[s1,s2,s3,s4,s1], y=[T1,T2,T3,T4,T1],
-        mode="lines+markers", line=dict(color=color, width=1.5),
-        marker=dict(size=7, symbol="square", color=[C["accent3"],C["accent"],C["accent2"],C["warn"],C["accent3"]],
-                    line=dict(color=C["panel"], width=1.5)),
-        hovertemplate="s=%{x:.3f}<br>T=%{y:.1f} K<extra></extra>",
+        x=ss, y=Ts,
+        mode="lines+markers",
+        line=dict(color=color, width=1.5),
+        marker=dict(
+            size=7, symbol="square",
+            color=[C["accent"], C["accent"], C["accent"],
+                   C["accent2"], C["warn"], C["accent3"], C["accent"]],
+            line=dict(color=C["panel"], width=1.5),
+        ),
+        hovertemplate="s=%{x:.4f} kJ/kg·K<br>T=%{y:.1f} K<extra></extra>",
         showlegend=False,
     ))
-    for sx,tx,lbl in [(s1,T1,"[0] Entrada"),(s2,T2,"[3] Compresor"),
-                       (s3,T3,"[4] Combustion"),(s4,T4,"[5] Turbina")]:
-        fig_ts.add_annotation(x=sx, y=tx, text=lbl,
-                               font=dict(color=C["dim"],size=8,family=C["mono"]),
-                               showarrow=False, yshift=13,
-                               bgcolor=C["panel"], bordercolor=C["border"],
-                               borderwidth=1, borderpad=3)
-    fig_ts.update_layout(**_plot_layout("Diagrama T-s  [ciclo Brayton]"))
-    fig_ts.update_xaxes(**_ax("Entropia relativa  [kJ/kg·K]"))
-    fig_ts.update_yaxes(**_ax("Temperatura  [K]"))
+    # Etiquetas de estación
+    for sx, tx, lbl in zip(ss[:-1], Ts[:-1], labels[:-1]):
+        fig_ts.add_annotation(
+            x=sx, y=tx, text=lbl,
+            font=dict(color=C["dim"], size=8, family=C["mono"]),
+            showarrow=False, yshift=13,
+            bgcolor=C["panel"], bordercolor=C["border"],
+            borderwidth=1, borderpad=3,
+        )
+    fig_ts.update_layout(**_plot_layout("Diagrama T-s  [kJ/kg·K]"))
+    fig_ts.update_xaxes(**_ax("Entropía relativa  s  [kJ/kg·K]"))
+    fig_ts.update_yaxes(**_ax("Temperatura  T  [K]"))
 
 
 
@@ -1099,6 +1393,8 @@ def run_simulation(engine_type, *all_vals):
     table = []
     if df is not None:
         for station in df.index:
+            if station in (0, 1):
+                continue
             try:
                 Tv  = float(df.loc[station,"T"])
                 cls = "hot" if Tv>1200 else ("warn" if Tv>800 else "")
@@ -1143,11 +1439,123 @@ def run_simulation(engine_type, *all_vals):
     # ── Esquema SVG ───────────────────────────────────────────────────────
     diagram = build_engine_diagram(engine_type, r.get("df"))
 
+    return metrics + [fig_ts, fig_comp, alert_msg, alert_style, diagram]
 
-    return metrics + [fig_ts, fig_comp,
-
-                      table, alert_msg, alert_style, diagram]
-
+# ── Mapa zona → sid de rendimiento (OneSpoolEngine) ───────────────────────────
+_ETA_MAP = {
+    "difusor":   ("os_edif",  "η difusor",  None,        None),
+    "compresor": ("os_ec",    "η compresor","W_comp",    "Trabajo [kJ/kg]"),
+    "camara":    ("os_ecc",   "η cámara",   "FAR",       "FAR"),
+    "turbina":   ("os_et",    "η turbina",  "shaft_MW",  "Potencia eje [MW]"),
+    "tobera":    ("os_enoz",  "η tobera",   "V_jet",     "V_jet [m/s]"),
+}
+_ZONE_COLORS = {
+    "difusor":   "#4a7abf",
+    "compresor": "#1a4d8f",
+    "camara":    "#b83232",
+    "turbina":   "#cc5500",
+    "tobera":    "#7055aa",
+}
+ 
+ 
+@app.callback(
+    Output("comp-tele-panel", "children"),
+    Input("onespool-diagram",   "clickData"),
+    State("eta-override-store", "data"),
+    prevent_initial_call=True,
+)
+def on_comp_click(clickData, eta_overrides):
+    """Dibuja el panel de telemetría al hacer click en una zona del diagrama."""
+    if clickData is None:
+        raise dash.exceptions.PreventUpdate
+    try:
+        cd = clickData["points"][0].get("customdata", [])
+        if len(cd) < 5:
+            raise dash.exceptions.PreventUpdate
+        zone_id, label, station, t_str, p_str = cd
+    except Exception:
+        raise dash.exceptions.PreventUpdate
+ 
+    if eta_overrides is None:
+        eta_overrides = {}
+ 
+    col = _ZONE_COLORS.get(zone_id, C["dim"])
+    eta_sid, eta_label, extra_key, extra_label = _ETA_MAP.get(
+        zone_id, (None, None, None, None)
+    )
+    # Valor actual del rendimiento (override si existe, si no el valor por defecto)
+    eta_default = {
+        "os_edif": 0.99, "os_ec": 0.92, "os_ecc": 0.99,
+        "os_et": 0.88, "os_enoz": 0.99,
+    }
+    current_eta = eta_overrides.get(eta_sid, eta_default.get(eta_sid)) if eta_sid else None
+ 
+    def row(lbl, val):
+        return html.Tr([
+            html.Td(lbl, className="tele-key"),
+            html.Td(val, className="tele-val"),
+        ])
+ 
+    rows = [
+        html.Tr([html.Td(label, colSpan=2, style={
+            "color": col, "fontFamily": C["head"], "fontWeight": "700",
+            "fontSize": "11px", "letterSpacing": "2px",
+            "paddingBottom": "6px", "borderBottom": f"1px solid {col}",
+        })]),
+        row("Tt salida", t_str),
+        row("Pt salida", p_str),
+    ]
+ 
+    if eta_sid:
+        rows.append(html.Tr([
+            html.Td(eta_label, className="tele-key"),
+            html.Td(dcc.Input(
+                id={"type": "eta-input", "zone": zone_id},
+                type="number", min=0.60, max=1.00, step=0.01,
+                value=current_eta,
+                placeholder="0.60–1.00",
+                style={
+                    "width": "70px", "fontFamily": C["mono"], "fontSize": "10px",
+                    "background": C["panel2"], "color": C["accent"],
+                    "border": f"1px solid {C['border']}", "padding": "2px 4px",
+                },
+                debounce=True,
+            ), className="tele-val"),
+        ]))
+        rows.append(html.Tr([html.Td(
+            "↵ Intro para aplicar",
+            colSpan=2,
+            style={"fontFamily":C["mono"],"fontSize":"8px",
+                   "color":C["dim"],"fontStyle":"italic","paddingTop":"3px"},
+        )]))
+ 
+    return [html.Table(rows, className="tele-table w-100")]
+ 
+ 
+@app.callback(
+    Output("eta-override-store", "data"),
+    Input({"type": "eta-input", "zone": dash.ALL}, "value"),
+    State({"type": "eta-input", "zone": dash.ALL}, "id"),
+    State("eta-override-store", "data"),
+    prevent_initial_call=True,
+)
+def update_eta_store(values, ids, current_store):
+    """Cuando el usuario escribe un η en el panel, lo guarda en el Store.
+    run_simulation escucha el Store y relanza el cálculo automáticamente."""
+    if not values or not ids:
+        raise dash.exceptions.PreventUpdate
+    store = dict(current_store or {})
+    for id_dict, val in zip(ids, values):
+        zone_id = id_dict["zone"]
+        eta_sid = _ETA_MAP.get(zone_id, (None,))[0]
+        if eta_sid and val is not None:
+            try:
+                v = float(val)
+                if 0.60 <= v <= 1.00:
+                    store[eta_sid] = v
+            except (TypeError, ValueError):
+                pass
+    return store
 
 if __name__ == "__main__":
     app.run(debug=True)

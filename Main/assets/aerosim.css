@@ -191,13 +191,35 @@ body::before {
 }
 
 /* ── Sliders Dash ── */
-.rc-slider-track  { background: var(--accent) !important; }
-.rc-slider-handle {
-    border-color: var(--accent) !important;
-    background: var(--panel) !important;
-    box-shadow: 0 0 0 2px rgba(26,77,143,0.15) !important;
+body .rc-slider-rail {
+    background-color: #555 !important;
+    height: 4px;
 }
-.rc-slider-rail { background: var(--border) !important; }
+
+body .rc-slider-track {
+    background-color: #777 !important;
+    height: 4px;
+}
+
+body .rc-slider-handle {
+    background-color: #888 !important;
+
+    width: 6px !important;
+    height: 18px !important;
+
+    border-radius: 2px !important;  /* casi recto */
+    border: 1px solid #aaa !important;
+
+    top: 50%;
+    transform: translateY(-50%);
+
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+}
+
+body .rc-slider-handle:hover {
+    background-color: #999 !important;
+    border-color: #ccc !important;
+}
 
 /* ── Scrollbars ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }

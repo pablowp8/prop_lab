@@ -1011,72 +1011,107 @@ sim_screen = html.Div([
 
     html.Div(id="alert-tit", style={"display":"none"}, className="alert-tit mx-3 mt-2"),
 
-    # ── Cuerpo — flex row con 3 columnas ─────────────────────────────────────
     html.Div([
 
-        # ── COL A (25%) — izquierda: inputs arriba, telemetría abajo ─────────
+    # ── COL A (20%) — izquierda: sliders ─────────────────────────────────
+    html.Div([
         html.Div([
+            html.Div(all_slider_groups),
+        ], style=PANEL_INPUTS),
+        html.Div(style={"height":"6px"}),
+    ], style={"width":"20%","display":"flex","flexDirection":"column",
+              "paddingRight":"6px"}),
 
-            # Panel A1 — sliders
-            html.Div([
-                html.Div(all_slider_groups),
-            ], style=PANEL_INPUTS),
-
-            # Centro: esquema SVG + indicadores
-            dbc.Col([
-                # Esquema SVG del motor (protagonista)
-                html.Div(id="engine-diagram",
-                         className="graph-card mb-1",
-                         style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
-                # Métricas ocultas — IDs necesarios para el callback
-                html.Div([
-                    metric_card("Empuje neto", "thrust", "kN",   "good"),
-                    metric_card("TSFC",        "tsfc",   "mg/Ns",""),
-                    metric_card("Combustible", "fuel",   "kg/s", "warn"),
-                ], style={"display":"none"}),
-                dbc.Row([
-                    dbc.Col(html.Div(
-                        dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
-                                  style={"height":"100%","width":"100%"}),
-                        style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
-                    width=6),
-                    dbc.Col(html.Div(
-                        dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
-                                  style={"height":"100%","width":"100%"}),
-                        style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
-                    width=6),
-                ], className="g-0 mb-1"),
-            ], width=5, style=PANEL_C),
-
-            # Derecha: gráficas + actuaciones
-            dbc.Col([
-                html.Div("Graficas", className="section-head mt-3"),
-                html.Div([
-                    html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
-                    html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
-                ], className="chart-selector mb-1"),
-                html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False},
-                                   style={"height":"260px"}),
-                         id="wrap-ts", className="graph-card mb-1"),
-                html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False},
-                                   style={"height":"260px"}),
-                         id="wrap-comp", className="graph-card mb-1",
-                         style={"display":"none"}),
-                # Telemetría oculta — ID necesario para el callback
-                html.Div(html.Table(id="tele-table", className="tele-table"),
-                         style={"display":"none"}),
-                html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
-                            className="btn-actuaciones mt-3"),
-            ], width=4, style=PANEL_R),
-
-        ], className="g-0"),
-    ], fluid=True, style={"padding":"0"}),
-
+    # ── COL B (50%) — centro: diagrama + telemetría + métricas ───────────
     html.Div([
-        html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
-        html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
-        html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
-    ], className="sim-footer"),
+
+        # Panel B1 — título + diagrama
+        html.Div([
+            html.Div(id="sim-eng-title", className="section-head",
+                     style={"padding":"8px 0 4px 0"}),
+            html.Div(id="engine-diagram",
+                     style={"lineHeight":"0","overflow":"hidden",
+                            "height":"calc(35vh - 30px)"}),
+        ], style=PANEL_DIAGRAM),
+
+        
+
+        # Panel B3 — métricas + gauges
+        html.Div([
+            #dbc.Row([
+            #    dbc.Col(metric_card("Empuje neto",        "thrust","kN",   "good"), width=4),
+            #    dbc.Col(metric_card("Consumo específico", "tsfc",  "mg/Ns",""),     width=4),
+            #    dbc.Col(metric_card("Combustible",        "fuel",  "kg/s", "warn"), width=4),
+            #], className="g-1 mt-1"),
+            dbc.Row([
+                dbc.Col(html.Div(
+                    dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
+                              style={"height":"100%","width":"100%"}),
+                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                width=6),
+                dbc.Col(html.Div(
+                    dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
+                              style={"height":"100%","width":"100%"}),
+                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                width=6),
+            ], className="g-0 mt-1"),
+        ], style={"paddingTop":"4px"}),
+
+    ], style={"width":"50%","paddingLeft":"6px","paddingRight":"6px",
+              "display":"flex","flexDirection":"column"}),
+
+    # ── COL C (30%) — derecha: selector + gráficas + actuaciones ─────────
+    html.Div([
+
+        # Selector de gráfica
+        html.Div([
+            html.Div("Gráficas", className="section-head mt-2"),
+            html.Div([
+                html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
+                html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
+            ], className="chart-selector mb-1"),
+        ]),
+
+        # Gráficas
+        html.Div([
+            html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False},
+                               style={"height":"260px"}),
+                     id="wrap-ts", className="graph-card mb-1"),
+            html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False},
+                               style={"height":"260px"}),
+                     id="wrap-comp", className="graph-card mb-1",
+                     style={"display":"none"}),
+            # Telemetría oculta — ID necesario para el callback
+            html.Div(html.Table(id="tele-table", className="tele-table"),
+                     style={"display":"none"}),
+        ], style=PANEL_GRAPHS),
+
+        # Panel B2 — telemetría del componente clicado
+        html.Div([
+            html.Div("TELEMETRÍA", className="section-head",
+                     style={"padding":"8px 0 4px 0"}),
+            html.Div(id="comp-tele-panel"),
+        ], style=PANEL_OUTPUTS_L),
+
+        # Botón ACTUACIONES
+        html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
+                    className="btn-actuaciones mt-3"),
+
+    ], style={"width":"30%","paddingLeft":"6px",
+              "display":"flex","flexDirection":"column"}),
+
+], style={
+    "display":"flex","flexDirection":"row",
+    "padding":"6px 10px",
+    "height":"calc(100vh - 80px)",
+    "overflow":"hidden",
+}),
+
+html.Div([
+    html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
+    html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
+    html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
+], className="sim-footer"),
 
 ], id="screen-sim", style={"display":"none","minHeight":"100vh","background":C["bg"]})
 
@@ -1258,9 +1293,9 @@ def update_labels(*vals):
 
 
 @app.callback(
-    Output("m-thrust",        "children"),
-    Output("m-tsfc",          "children"),
-    Output("m-fuel",          "children"),
+    #Output("m-thrust",        "children"),
+   # Output("m-tsfc",          "children"),
+    #Output("m-fuel",          "children"),
     Output("graph-ts",           "figure"),
     Output("graph-comp",         "figure"),
     Output("graph-gauge-thrust", "figure"),
@@ -1299,7 +1334,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
                        html.Td(msg_str[:80], className="tele-val")])]
         ed = html.Div(msg_str[:120], style={"padding":"8px","fontFamily":C["mono"],
                                              "fontSize":"10px","color":C["accent2"]})
-        return ["--"]*3 + [ef, ef, ef, ef, et, msg_str, {"display":"block"}, ed]
+        return  [ef, ef, ef, ef, et, msg_str, {"display":"block"}, ed]
 
     try:
         r = cfg["runner"](p)
@@ -1713,7 +1748,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         n_major=4,
     )
 
-    return metrics + [fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
+    return [fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
                       table, alert_msg, alert_style, diagram]
 
 

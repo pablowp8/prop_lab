@@ -292,6 +292,36 @@ def _ax(title_text=None):
         d["title_text"] = title_text
     return d
 
+
+def _isa(h_m):
+    """Atmósfera Estándar Internacional (ISA). Devuelve (T [K], P [Pa])."""
+    T0, P0, L, g, R = 288.15, 101325.0, 0.0065, 9.80665, 287.05
+    if h_m <= 11000:
+        T = T0 - L * h_m
+        P = P0 * (T / T0) ** (g / (L * R))
+    else:
+        T11 = T0 - L * 11000
+        P11 = P0 * (T11 / T0) ** (g / (L * R))
+        T   = T11
+        P   = P11 * np.exp(-g * (h_m - 11000) / (R * T11))
+    return T, P
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  ESQUEMA SVG DEL MOTOR
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_engine_diagram(engine_type, df):
+    """
+    Esquema del motor usando Plotly shapes + annotations.
+    Compatible con todas las versiones de Dash (sin dangerously_allow_html).
+    """
+    def tv(st):
+        try:    return float(df.loc[st, "T"]) if df is not None and st in df.index else None
+        except: return None
+    def pv(st):
+        try:    return float(df.loc[st, "P"]) / 1000 if df is not None and st in df.index else None
+        except: return None
 def _rgba(h, a=0.15):
     h = h.lstrip("#")
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
@@ -816,7 +846,7 @@ def _build_original(engine_type, df):
         shapes=S, annotations=A,
         plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
         margin=dict(l=0, r=0, t=0, b=0),
-        height=110,
+        height=200,
         xaxis=dict(range=[0, 800], visible=False, fixedrange=True),
         yaxis=dict(range=[0, 1],   visible=False, fixedrange=True),
         showlegend=False,
@@ -928,6 +958,10 @@ for eid, cfg in ENGINE_CONFIGS.items():
             )
         )
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
+PANEL_R = {"background":C["panel"],"borderLeft":f"1px solid {C['border']}",
+            "paddingLeft":"12px","paddingRight":"12px",
+            "overflowY":"auto","height":"calc(100vh - 80px)"}
+PANEL_C = {"overflowY":"auto","height":"calc(100vh - 80px)","paddingRight":"0"}
 
 PANEL_INPUTS = {
     "background": C["panel"],
@@ -988,67 +1022,55 @@ sim_screen = html.Div([
                 html.Div(all_slider_groups),
             ], style=PANEL_INPUTS),
 
-            html.Div(style={"height":"6px"}),
-
-        ], style={"width":"20%","display":"flex","flexDirection":"column",
-                  "paddingRight":"6px"}),
-
-        # ── COL B (37.5%) — centro: diagrama arriba, métricas abajo ─────────
-        html.Div([
-
-            # Panel B1 — diagrama del motor
-            html.Div([
-                html.Div(id="sim-eng-title", className="section-head",
-                         style={"padding":"8px 0 4px 0"}),
+            # Centro: esquema SVG + indicadores
+            dbc.Col([
+                # Esquema SVG del motor (protagonista)
                 html.Div(id="engine-diagram",
-                         style={"lineHeight":"0","overflow":"hidden",
-                                "height":"calc(35vh - 30px)"}),
-            ], style=PANEL_DIAGRAM),
-
-            # Panel B2 — telemetría del componente clicado
-            html.Div([
-                html.Div("TELEMETRÍA", className="section-head",
-                         style={"padding":"8px 0 4px 0"}),
-                html.Div(id="comp-tele-panel"),
-            ], style=PANEL_OUTPUTS_L),
-
-            # Métricas debajo del diagrama
-            html.Div([
+                         className="graph-card mb-1",
+                         style={"padding":"0","lineHeight":"0","overflow":"hidden"}),
+                # Métricas ocultas — IDs necesarios para el callback
+                html.Div([
+                    metric_card("Empuje neto", "thrust", "kN",   "good"),
+                    metric_card("TSFC",        "tsfc",   "mg/Ns",""),
+                    metric_card("Combustible", "fuel",   "kg/s", "warn"),
+                ], style={"display":"none"}),
                 dbc.Row([
-                    dbc.Col(metric_card("Empuje neto",        "thrust","kN",   "good"), width=4),
-                    dbc.Col(metric_card("Consumo específico", "tsfc",  "mg/Ns",""),     width=4),
-                    dbc.Col(metric_card("Combustible",        "fuel",  "kg/s", "warn"), width=4),
-                ], className="g-1 mt-2"),
-            ], style={"height":"calc(25vh - 86px)","paddingTop":"4px"}),
+                    dbc.Col(html.Div(
+                        dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
+                                  style={"height":"100%","width":"100%"}),
+                        style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                    width=6),
+                    dbc.Col(html.Div(
+                        dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
+                                  style={"height":"100%","width":"100%"}),
+                        style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                    width=6),
+                ], className="g-0 mb-1"),
+            ], width=5, style=PANEL_C),
 
-        ], style={"width":"50%","paddingLeft":"6px","paddingRight":"6px",
-                  "display":"flex","flexDirection":"column"}),
+            # Derecha: gráficas + actuaciones
+            dbc.Col([
+                html.Div("Graficas", className="section-head mt-3"),
+                html.Div([
+                    html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
+                    html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
+                ], className="chart-selector mb-1"),
+                html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False},
+                                   style={"height":"260px"}),
+                         id="wrap-ts", className="graph-card mb-1"),
+                html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False},
+                                   style={"height":"260px"}),
+                         id="wrap-comp", className="graph-card mb-1",
+                         style={"display":"none"}),
+                # Telemetría oculta — ID necesario para el callback
+                html.Div(html.Table(id="tele-table", className="tele-table"),
+                         style={"display":"none"}),
+                html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
+                            className="btn-actuaciones mt-3"),
+            ], width=4, style=PANEL_R),
 
-        # ── COL C (37.5%) — derecha: botón ACTUACIONES + gráficas ────────────
-        html.Div([
-            # Panel C — gráficas una debajo de la otra
-            html.Div([
-                html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False}),
-                         style={"marginBottom":"4px"}),
-                html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False})),
-            ], style=PANEL_GRAPHS),
-            # Botón ACTUACIONES (sin funcionalidad por ahora)
-            html.Button("ACTUACIONES", id="btn-actuaciones", n_clicks=0, style={
-                "background":"transparent","border":f"1px solid {C['border']}",
-                "color":C["accent"],"fontFamily":C["head"],"fontWeight":"700",
-                "fontSize":"12px","letterSpacing":"3px","padding":"7px 0",
-                "cursor":"pointer","width":"100%","textTransform":"uppercase",
-                "marginBottom":"6px",
-            }),
-        ], style={"width":"30%","paddingLeft":"6px",
-                  "display":"flex","flexDirection":"column"}),
-
-    ], style={
-        "display":"flex","flexDirection":"row",
-        "padding":"6px 10px",
-        "height":"calc(100vh - 80px)",
-        "overflow":"hidden",
-    }),
+        ], className="g-0"),
+    ], fluid=True, style={"padding":"0"}),
 
     html.Div([
         html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
@@ -1060,6 +1082,77 @@ sim_screen = html.Div([
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  PANTALLA ACTUACIONES
+# ══════════════════════════════════════════════════════════════════════════════
+
+_BTN_BACK_STYLE = {
+    "background":"transparent","border":"1px solid var(--border2)",
+    "color":"var(--dim)","fontFamily":"var(--head)","fontWeight":"700",
+    "fontSize":"10px","letterSpacing":"2px","padding":"4px 12px","cursor":"pointer",
+    "transition":"all 0.15s",
+}
+
+def _act_slider(slider_id, label, mn, mx, val, step, marks):
+    return html.Div([
+        html.Div([
+            html.Span(label, style={"fontSize":"11px","color":C["dim"],
+                                    "fontFamily":C["head"],"letterSpacing":"1px"}),
+            html.Span(id=f"act-val-{slider_id}", style={"fontFamily":C["mono"],
+                                                         "fontSize":"11px","color":C["accent"]}),
+        ], style={"display":"flex","justifyContent":"space-between","marginBottom":"3px"}),
+        dcc.Slider(id=f"act-sl-{slider_id}", min=mn, max=mx, value=val, step=step,
+                   marks=marks,
+                   tooltip={"always_visible":False},
+                   className="act-slider"),
+    ], style={"padding":"10px 14px 14px","background":C["panel"],
+              "border":"1px solid "+C["border"],"marginBottom":"8px"})
+
+act_screen = html.Div([
+    dbc.Navbar([
+        html.Span("PROP-Lab", className="aerosim-logo"),
+        html.Div([
+            html.Span(id="act-eng-label", className="nav-badge"),
+            html.Span("ACTUACIONES", className="nav-badge live"),
+            html.Button("← DISEÑO", id="btn-act-back", n_clicks=0,
+                        style=_BTN_BACK_STYLE),
+        ], style={"display":"flex","gap":"10px","alignItems":"center"}),
+    ], className="aerosim-nav", dark=False),
+
+    dbc.Container([
+        dbc.Row([
+            # ── Izquierda: Empuje vs Mach (Despegue) ──────────────────
+            dbc.Col([
+                html.Div("Empuje vs Mach  —  Despegue", className="section-head mt-3"),
+                _act_slider("t0", "T₀ [°C]", -40, 50, 15, 1,
+                            {-40:"-40°", -20:"-20°", 0:"0°", 15:"ISA", 35:"35°", 50:"50°"}),
+                html.Div(dcc.Graph(id="graph-act-thrust",
+                                   config={"displayModeBar":False}),
+                         className="graph-card"),
+            ], width=6),
+            # ── Derecha: TSFC vs Mach (Crucero) ───────────────────────
+            dbc.Col([
+                html.Div("Empuje vs Mach  —  Crucero", className="section-head mt-3"),
+                _act_slider("alt", "Altitud [m]", 0, 13000, 10000, 100,
+                            {0:"0", 3000:"3 km", 6000:"6 km",
+                             10000:"10 km", 13000:"13 km"}),
+                html.Div(dcc.Graph(id="graph-act-tsfc",
+                                   config={"displayModeBar":False}),
+                         className="graph-card"),
+            ], width=6),
+        ], className="mt-1 g-2"),
+    ], fluid=True, style={"padding":"0 12px"}),
+
+    html.Div([
+        html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
+        html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
+        html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
+    ], className="sim-footer"),
+
+], id="screen-actuaciones",
+   style={"display":"none","minHeight":"100vh","background":C["bg"]})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  LAYOUT RAÍZ
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1068,6 +1161,7 @@ app.layout = html.Div([
     dcc.Store(id="eta-override-store", data={}),
     menu_screen,
     sim_screen,
+    act_screen,
 ], style={"background":C["bg"]})
 
 
@@ -1121,6 +1215,21 @@ def navigate(*args):
     )
 
 
+@app.callback(
+    Output("wrap-ts",        "style"),
+    Output("wrap-comp",      "style"),
+    Output("btn-chart-ts",   "className"),
+    Output("btn-chart-comp", "className"),
+    Input("btn-chart-ts",    "n_clicks"),
+    Input("btn-chart-comp",  "n_clicks"),
+    prevent_initial_call=True,
+)
+def select_chart(_n_ts, _n_comp):
+    if ctx.triggered_id == "btn-chart-comp":
+        return {"display":"none"}, {}, "chart-btn", "chart-btn chart-btn-active"
+    return {}, {"display":"none"}, "chart-btn chart-btn-active", "chart-btn"
+
+
 # Mapa sid → step, para decidir el formato del label
 _SLIDER_STEP = {
     sid: stp
@@ -1152,8 +1261,11 @@ def update_labels(*vals):
     Output("m-thrust",        "children"),
     Output("m-tsfc",          "children"),
     Output("m-fuel",          "children"),
-    Output("graph-ts",        "figure"),
-    Output("graph-comp",      "figure"),
+    Output("graph-ts",           "figure"),
+    Output("graph-comp",         "figure"),
+    Output("graph-gauge-thrust", "figure"),
+    Output("graph-gauge-epr",    "figure"),
+    Output("tele-table",         "children"),
     Output("alert-tit",       "children"),
     Output("alert-tit",       "style"),
     Output("engine-diagram",  "children"),
@@ -1180,15 +1292,14 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             for sid, val in eta_overrides.items():
                 if val is not None and sid in p:
                     p[sid] = float(val)
-
-    # Error path: devuelve exactamente 15 valores (7 métricas + 4 figs + tabla + msg + style + diagram)
+    # Error path
     def _err(msg_str):
-        ef = go.Figure().update_layout(**_plot_layout(f"Error"))
+        ef = go.Figure().update_layout(**_plot_layout("Error"))
         et = [html.Tr([html.Td("Error", className="tele-key"),
                        html.Td(msg_str[:80], className="tele-val")])]
         ed = html.Div(msg_str[:120], style={"padding":"8px","fontFamily":C["mono"],
                                              "fontSize":"10px","color":C["accent2"]})
-        return ["--"]*3 + [ef,ef, msg_str, {"display":"block"}, ed]
+        return ["--"]*3 + [ef, ef, ef, ef, et, msg_str, {"display":"block"}, ed]
 
     try:
         r = cfg["runner"](p)
@@ -1439,7 +1550,291 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     # ── Esquema SVG ───────────────────────────────────────────────────────
     diagram = build_engine_diagram(engine_type, r.get("df"))
 
-    return metrics + [fig_ts, fig_comp, alert_msg, alert_style, diagram]
+    # ── Indicadores analógicos (Empuje / EPR) ────────────────────────────
+    thrust_val = r["thrust_kN"]
+    thrust_max = max(300.0, round(thrust_val * 1.8 / 50) * 50)
+
+    _opr    = max(r.get("opr", r["Pt3_kPa"] / max(r["Pt0_kPa"], 0.001)), 1.0)
+    _T4     = max(r["Tt4_K"], 1.0)
+    _T5     = max(r["Tt5_K"], 1.0)
+    epr_val = max(1.0, min(_opr * (_T5 / _T4) ** 3.5, 4.99))
+
+    def _analog_gauge(value, vmin, vmax, title, suffix, zones, n_major=6):
+        """Gauge analógico dibujado con scatter + shapes: cara, arco de colores,
+        marcas de escala, aguja con pivote y lectura numérica central."""
+
+        # ── Geometría ────────────────────────────────────────────────────
+        # Espacio de coordenadas normalizado [0,1]×[0,1]
+        # El arco va de 225° (mín, izq.) a −45° (máx, der.) en sentido horario
+        CX, CY   = 0.50, 0.52     # centro del instrumento
+        ANG_MIN  = 225.0           # ángulo para vmin (°, sistema antihorario)
+        SWEEP    = 270.0           # barrido total del arco (°)
+        RB       = 0.44            # radio bisel exterior
+        RF       = 0.42            # radio cara
+        RO       = 0.40            # borde exterior arco de colores
+        RI       = 0.30            # borde interior arco de colores
+        RT_OUT   = 0.29            # marcas menores — exterior
+        RT_MIN   = 0.26            # marcas menores — interior
+        RT_MAJ   = 0.21            # marcas mayores — interior
+        RL       = 0.14            # etiquetas de escala
+        RN       = 0.34            # longitud aguja
+        RTAIL    = 0.055           # contrapeso aguja (cola)
+
+        def a2r(ang_deg):          # grados → radianes
+            return np.radians(ang_deg)
+        def v2a(v):                # valor → ángulo (decrece hacia la derecha)
+            return ANG_MIN - (v - vmin) / (vmax - vmin) * SWEEP
+        def xy(ang_deg, r):
+            ar = a2r(ang_deg)
+            return CX + r * np.cos(ar), CY + r * np.sin(ar)
+
+        shapes, annotations = [], []
+        traces = []
+
+        # ── Bisel (anillo exterior) ───────────────────────────────────
+        t = np.linspace(0, 2 * np.pi, 160)
+        xo = list(CX + RB * np.cos(t));  yo = list(CY + RB * np.sin(t))
+        xi = list(CX + RF * np.cos(t[::-1])); yi = list(CY + RF * np.sin(t[::-1]))
+        traces.append(go.Scatter(x=xo + xi, y=yo + yi,
+                                 fill="toself", fillcolor=C["text"],
+                                 line=dict(width=0), mode="lines",
+                                 showlegend=False, hoverinfo="skip"))
+
+        # ── Cara del instrumento ──────────────────────────────────────
+        traces.append(go.Scatter(x=CX + RF * np.cos(t), y=CY + RF * np.sin(t),
+                                 fill="toself", fillcolor=C["panel"],
+                                 line=dict(color=C["border2"], width=0.5),
+                                 mode="lines", showlegend=False, hoverinfo="skip"))
+
+        # ── Arcos de colores (zonas) ──────────────────────────────────
+        for v0, v1, col in zones:
+            a0 = v2a(max(v0, vmin));  a1 = v2a(min(v1, vmax))
+            # linspace de a0 a a1 va en sentido HORARIO porque a1 < a0
+            angs = np.linspace(a2r(a0), a2r(a1), 60)
+            xoa = list(CX + RO * np.cos(angs))
+            yoa = list(CY + RO * np.sin(angs))
+            xia = list(CX + RI * np.cos(angs[::-1]))
+            yia = list(CY + RI * np.sin(angs[::-1]))
+            traces.append(go.Scatter(x=xoa + xia, y=yoa + yia,
+                                     fill="toself", fillcolor=col,
+                                     line=dict(width=0), mode="lines",
+                                     showlegend=False, hoverinfo="skip"))
+
+        # ── Marcas menores ────────────────────────────────────────────
+        for i in range(n_major * 5 + 1):
+            v   = vmin + i * (vmax - vmin) / (n_major * 5)
+            ang = v2a(v)
+            x0, y0 = xy(ang, RT_MIN)
+            x1, y1 = xy(ang, RT_OUT)
+            shapes.append(dict(type="line", x0=x0, y0=y0, x1=x1, y1=y1,
+                               line=dict(color=C["border2"], width=0.7)))
+
+        # ── Marcas mayores + etiquetas ────────────────────────────────
+        for i in range(n_major + 1):
+            v   = vmin + i * (vmax - vmin) / n_major
+            ang = v2a(v)
+            x0, y0 = xy(ang, RT_MAJ)
+            x1, y1 = xy(ang, RT_OUT)
+            shapes.append(dict(type="line", x0=x0, y0=y0, x1=x1, y1=y1,
+                               line=dict(color=C["dim"], width=1.8)))
+            xl, yl = xy(ang, RL)
+            lbl = (f"{v:.1f}" if (vmax - vmin) < 5
+                   else f"{int(round(v))}")
+            annotations.append(dict(x=xl, y=yl, text=lbl, showarrow=False,
+                                    font=dict(size=8, family=C["mono"],
+                                              color=C["dim"])))
+
+        # ── Aguja ─────────────────────────────────────────────────────
+        needle_ang = v2a(max(vmin, min(value, vmax)))
+        xn, yn   = xy(needle_ang, RN)
+        xt, yt   = xy(needle_ang + 180, RTAIL)
+        # Sombra de la aguja (desplazada ligeramente)
+        shapes.append(dict(type="line",
+                           x0=xt + 0.004, y0=yt - 0.004,
+                           x1=xn + 0.004, y1=yn - 0.004,
+                           line=dict(color="rgba(0,0,0,0.15)", width=3)))
+        # Aguja principal
+        shapes.append(dict(type="line",
+                           x0=xt, y0=yt, x1=xn, y1=yn,
+                           line=dict(color=C["accent2"], width=2.2)))
+
+        # ── Pivote central ────────────────────────────────────────────
+        traces.append(go.Scatter(
+            x=[CX], y=[CY], mode="markers",
+            marker=dict(size=11, color=C["accent"],
+                        line=dict(color=C["panel"], width=2.5)),
+            showlegend=False, hoverinfo="skip"))
+
+        # ── Valor numérico ─────────────────────────────────────────────
+        annotations.append(dict(
+            x=CX, y=CY - 0.19,
+            text=f"{value:.1f}{suffix}",
+            showarrow=False,
+            font=dict(size=15, family=C["mono"], color=C["accent"])))
+
+        # ── Título ────────────────────────────────────────────────────
+        annotations.append(dict(
+            x=CX, y=0.05,
+            text=title,
+            showarrow=False,
+            font=dict(size=9, family=C["head"], color=C["dim"])))
+
+        # ── Figura final ──────────────────────────────────────────────
+        fig = go.Figure(data=traces)
+        fig.update_layout(
+            shapes=shapes,
+            annotations=annotations,
+            paper_bgcolor=C["bg"],
+            plot_bgcolor=C["bg"],
+            xaxis=dict(range=[0, 1], showgrid=False, zeroline=False,
+                       showticklabels=False, fixedrange=True),
+            yaxis=dict(range=[0, 1], showgrid=False, zeroline=False,
+                       showticklabels=False, fixedrange=True,
+                       scaleanchor="x", scaleratio=1),
+            margin=dict(l=2, r=2, t=2, b=2),
+            showlegend=False,
+            dragmode=False,
+        )
+        return fig
+
+    fig_gauge_thrust = _analog_gauge(
+        thrust_val, 0, thrust_max,
+        "EMPUJE", " kN",
+        [(0,               thrust_max * 0.5,  "rgba(26,102,68,0.18)"),
+         (thrust_max * 0.5, thrust_max * 0.8, "rgba(26,77,143,0.14)"),
+         (thrust_max * 0.8, thrust_max,       "rgba(184,50,50,0.22)")],
+    )
+    fig_gauge_epr = _analog_gauge(
+        epr_val, 1.0, 5.0,
+        "EPR", "",
+        [(1.0, 2.2, "rgba(26,77,143,0.14)"),
+         (2.2, 3.8, "rgba(26,102,68,0.18)"),
+         (3.8, 5.0, "rgba(184,50,50,0.22)")],
+        n_major=4,
+    )
+
+    return metrics + [fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
+                      table, alert_msg, alert_style, diagram]
+
+
+# ── Navegación sim ↔ actuaciones ─────────────────────────────────────────────
+@app.callback(
+    Output("screen-sim",         "style", allow_duplicate=True),
+    Output("screen-actuaciones", "style"),
+    Output("act-eng-label",      "children"),
+    Input("btn-actuaciones",     "n_clicks"),
+    Input("btn-act-back",        "n_clicks"),
+    State("active-engine",       "data"),
+    prevent_initial_call=True,
+)
+def nav_actuaciones(_n_fwd, _n_back, engine_type):
+    _show = {"minHeight":"100vh","background":C["bg"]}
+    _hide = {"display":"none","minHeight":"100vh","background":C["bg"]}
+    lbl   = ENGINE_CONFIGS[engine_type]["label"].upper() if engine_type else ""
+    if ctx.triggered_id == "btn-actuaciones":
+        return _hide, _show, lbl
+    return _show, _hide, lbl
+
+
+# ── Labels reactivos de los sliders de actuaciones ───────────────────────────
+@app.callback(
+    Output("act-val-t0",  "children"),
+    Output("act-val-alt", "children"),
+    Input("act-sl-t0",    "value"),
+    Input("act-sl-alt",   "value"),
+)
+def act_slider_labels(t0, alt):
+    return (f"{t0:+.0f} °C" if t0 is not None else "—",
+            f"{int(alt):,} m  ({alt/1000:.1f} km)" if alt is not None else "—")
+
+
+# ── Cálculo de curvas de actuación ────────────────────────────────────────────
+@app.callback(
+    Output("graph-act-thrust", "figure"),
+    Output("graph-act-tsfc",   "figure"),
+    Input("btn-actuaciones",   "n_clicks"),
+    Input("act-sl-t0",         "value"),
+    Input("act-sl-alt",        "value"),
+    State("active-engine",     "data"),
+    *[State(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
+    prevent_initial_call=True,
+)
+def compute_actuaciones(_n, t0_c, alt_m, engine_type, *all_vals):
+    if not engine_type:
+        raise dash.exceptions.PreventUpdate
+
+    cfg   = ENGINE_CONFIGS[engine_type]
+    color = cfg["color"]
+    cls   = cfg["engine_cls"]
+
+    # Parámetros del punto de diseño
+    p = {}
+    for section in ("sliders_vuelo", "sliders_diseno", "sliders_comp"):
+        for sid, _, _, _, default, _ in cfg[section]:
+            idx = ALL_SLIDER_IDS.index(sid)
+            p[sid] = all_vals[idx] if all_vals[idx] is not None else default
+    base = cfg["sweep_base"](p)
+
+    # Rango de Mach según tipo de motor
+    mach_max = {"OneSpoolTurboprop": 0.7,
+                "SingleFlowTurbofan": 1.0}.get(engine_type, 2.0)
+    machs = np.linspace(0, mach_max, 45)
+
+    t0_k  = (t0_c  if t0_c  is not None else 15) + 273.15
+    alt   = alt_m if alt_m is not None else 10000
+    T_cr, P_cr = _isa(alt)
+
+    def run(mach, T_amb, P_amb):
+        try:
+            r = cls().simulate(**{**base, "T_amb": T_amb, "P_amb": P_amb, "mach": mach})
+            return r["thrust_kN"], r["TSFC_mg"]
+        except Exception:
+            return None, None
+
+    # ── Empuje vs Mach (condiciones de despegue: h=0, T=slider) ──────
+    P_sl = 101325.0   # presión ISA a nivel del mar
+    x_f, y_f = [], []
+    for m in machs:
+        thrust, _ = run(m, t0_k, P_sl)
+        if thrust is not None:
+            x_f.append(m); y_f.append(thrust)
+
+    title_f = f"Empuje vs Mach  —  T₀ = {t0_c:+.0f} °C,  h = 0 m"
+    fig_thrust = go.Figure()
+    fig_thrust.add_trace(go.Scatter(
+        x=x_f, y=y_f, mode="lines",
+        line=dict(color=color, width=2.5),
+        fill="tozeroy", fillcolor=_rgba(color, 0.07),
+        hovertemplate="M = %{x:.3f}<br>F = %{y:.2f} kN<extra></extra>",
+        showlegend=False,
+    ))
+    fig_thrust.update_layout(**_plot_layout(title_f))
+    fig_thrust.update_xaxes(**_ax("Número de Mach  [ — ]"))
+    fig_thrust.update_yaxes(**_ax("Empuje  [kN]"))
+
+    # ── Empuje vs Mach (condiciones de crucero: h=slider, T=ISA) ────
+    x_s, y_s = [], []
+    for m in machs:
+        thrust_cr, _ = run(m, T_cr, P_cr)
+        if thrust_cr is not None:
+            x_s.append(m); y_s.append(thrust_cr)
+
+    h_km    = alt / 1000
+    T_isa   = T_cr - 273.15
+    title_s = f"Empuje vs Mach  —  h = {h_km:.1f} km,  T_ISA = {T_isa:.1f} °C"
+    fig_tsfc = go.Figure()
+    fig_tsfc.add_trace(go.Scatter(
+        x=x_s, y=y_s, mode="lines",
+        line=dict(color=color, width=2.5),
+        fill="tozeroy", fillcolor=_rgba(color, 0.07),
+        hovertemplate="M = %{x:.3f}<br>F = %{y:.2f} kN<extra></extra>",
+        showlegend=False,
+    ))
+    fig_tsfc.update_layout(**_plot_layout(title_s))
+    fig_tsfc.update_xaxes(**_ax("Número de Mach  [ — ]"))
+    fig_tsfc.update_yaxes(**_ax("Empuje  [kN]"))
+
+    return fig_thrust, fig_tsfc
 
 # ── Mapa zona → sid de rendimiento (OneSpoolEngine) ───────────────────────────
 _ETA_MAP = {

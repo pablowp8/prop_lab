@@ -65,7 +65,7 @@ class Component:
 class Difussor(Component):
     def calculate(self, t_in, p_in, mach, pressure_ratio=1.0):
         t_out = t_in * (1 + (self.gamma - 1) * mach**2 / 2)
-        p_out = p_in * (1 + (self.gamma - 1) * mach**2 / 2) ** (self.gamma / (self.gamma - 1))
+        p_out = p_in * (1 + self.eta*(t_out/t_in - 1)) ** (self.gamma / (self.gamma - 1))
         p_out *= pressure_ratio
         return t_out, p_out
 
@@ -73,8 +73,7 @@ class Difussor(Component):
 class Compressor(Component):
     def calculate(self, t_in, p_in, pressure_ratio):
         p_out       = p_in * pressure_ratio
-        t_out_ideal = t_in * (pressure_ratio ** ((self.gamma - 1) / self.gamma))
-        t_out       = t_in + (t_out_ideal - t_in) / self.eta
+        t_out       = t_in * (pressure_ratio ** ((self.gamma - 1) / self.gamma)/ self.eta + 1)
         work        = self.cp * (t_out - t_in)
         return t_out, p_out, work
 
@@ -85,14 +84,11 @@ class CombustionChamber(Component):
         heat_added = self.cp * (tit - t_in)
         return tit, p_out, heat_added
 
-
 class Turbine(Component):
     def calculate(self, t_in, p_in, required_work):
         t_out = t_in - (required_work / self.cp)
-        p_out = p_in * (1 - (t_in - t_out) / (self.eta * t_in)) ** (self.gamma / (self.gamma - 1))
+        p_out = p_in * (1 - (1-t_out/t_in) / self.eta) ** (self.gamma / (self.gamma - 1))
         return t_out, p_out
-
-
 class Postcombustor(Component):
     def calculate(self, t_in, p_in):
         return t_in, p_in
@@ -101,7 +97,7 @@ class Postcombustor(Component):
 class Nozzle(Component):
     def calculate(self, t_in, p_in, t_a, p_a, conf='CON'):
         if conf == 'CON':
-            param_pressure = p_in / p_a
+            param_pressure = p_a / p_in
             param_gamma    = ((self.gamma + 1) / 2) ** (self.gamma / (self.gamma - 1))
             if param_pressure <= param_gamma:       # adaptada
                 p_out = p_a
@@ -188,10 +184,10 @@ class OneSpoolEngine:
     TIT_LIMIT = 1600   # K — alerta de integridad estructural
 
     def __init__(self):
-        self.dif  = Difussor()
-        self.comp = Compressor(eta=0.80)
-        self.cc   = CombustionChamber()
-        self.turb = Turbine(eta=0.88)
+        self.dif  = Difussor(eta=0.9)
+        self.comp = Compressor(eta=0.95)
+        self.cc   = CombustionChamber(eta=0.95)
+        self.turb = Turbine(eta=0.92)
         self.pc   = Postcombustor()
         self.nozz = Nozzle()
 
@@ -217,7 +213,7 @@ class OneSpoolEngine:
         V0 = mach * speed_of_sound(T_amb)
 
         T_2t, P_2t         = self.dif.calculate(T_amb, P_amb, mach)
-        T_3t, P_3t, W_c    = self.comp.calculate(T_2t, P_amb, pi_23)
+        T_3t, P_3t, W_c    = self.comp.calculate(T_2t, P_2t, pi_23)
         T_4t, P_4t, _      = self.cc.calculate(T_3t, P_3t, tit)
         T_5t, P_5t         = self.turb.calculate(T_4t, P_4t, W_c)
         T_7t, P_7t         = self.pc.calculate(T_5t, P_5t)
@@ -229,7 +225,7 @@ class OneSpoolEngine:
             {0:"0", 2:"2t", 3:"3t", 4:"4t", 5:"5t", 9:"9"},
         )
 
-        FAR = CP * (T_4t - T_3t) / LHV
+        FAR = CP * (T_4t - T_3t) / (LHV * self.cc.eta)
         r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=pi_23,
                   Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_amb/1000)
@@ -282,7 +278,7 @@ class TwinSpoolEngine:
             {0:"0", 2:"2t", 2.5:"25t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 9:"9"},
         )
 
-        FAR = CP * (T_4t - T_3t) / LHV
+        FAR = CP * (T_4t - T_3t) / (LHV * self.cc.eta)
         opr = pi_lpc * pi_hpc
         r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=opr,
                   Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
@@ -400,7 +396,7 @@ class OneSpoolTurboprop:
             {0:"0", 2:"2t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 9:"9"},
         )
 
-        FAR        = CP * (T_4t - T_3t) / LHV
+        FAR        = CP * (T_4t - T_3t) /(LHV*self.cc.eta)
         fuel_kg_s  = G * FAR
         F_residual = G * (V_jet - V0)
         F_helice   = W_h * eta_m / max(V0, 1.0)

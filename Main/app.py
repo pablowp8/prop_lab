@@ -659,9 +659,8 @@ def _build_onespool(df):
         plot_bgcolor=C["panel"],
         paper_bgcolor=C["panel"],
         autosize=True,
-        margin=dict(l=0, r=0, t=10, b=10),
-        height=210,
-        xaxis=dict(domain=[0.05, 0.93],range=[0, 635], visible=False, fixedrange=True),
+        margin=dict(l=20, r=20, t=0, b=20),
+        xaxis=dict(domain=[0,1],range=[20, 630], visible=False, fixedrange=True),
         yaxis=dict(range=[0, 1],   visible=False, fixedrange=True),
         showlegend=False,
         hovermode="closest",
@@ -669,70 +668,46 @@ def _build_onespool(df):
 
     # ── Zonas interactivas (scatter invisible para hover y click) ─────────────
     ZONES = [
-        ("difusor",   "DIFUSOR",    110,  2),
-        ("compresor", "COMPRESOR",  260, 3),
-        ("camara",    "CÁMARA CC",  370, 4),
-        ("turbina",   "TURBINA",    470, 5),
-        ("tobera",    "TOBERA",     630, 9),
+        ("difusor",   "DIFUSOR",    20,  110,  2),   # x0, x1, estación salida
+        ("compresor", "COMPRESOR", 110,  260,  3),
+        ("camara",    "CÁMARA CC", 260,  370,  4),
+        ("turbina",   "TURBINA",   370,  450,  5),
+        ("tobera",    "TOBERA",    450,  630,  9),
     ]
     zone_colors = {
-        "difusor":   "#4a7abf",
-        "compresor": "#1a4d8f",
-        "camara":    "#b83232",
-        "turbina":   "#cc5500",
-        "tobera":    "#7055aa",
+        "difusor":   C["accent"],
+        "compresor": C["accent"],
+        "camara":    C["accent"],
+        "turbina":   C["accent"],
+        "tobera":    C["accent"],
     }
 
-    for i, (zone_id, label, xc, st) in enumerate(ZONES):
+    for i, (zone_id, label, x0, x1, st) in enumerate(ZONES):
         T_val = _tv(df, st)
         P_val = _pv(df, st)
         t_str = f"{T_val:.1f} K"   if T_val is not None else "—"
         p_str = f"{P_val:.2f} kPa" if P_val is not None else "—"
-        col   = zone_colors[zone_id]
- 
-        # ── Cable ficticio: línea de puntos desde el componente hasta el borde ──
-        # Usamos paper x para el extremo derecho (1.0 = borde del plot)
-        # y data x para el origen en el componente.
-        cable_y_val = 0.15 + i * 0.14   # escalonado verticalmente: 0.15, 0.29, 0.43, 0.57, 0.71
-        # Segmento horizontal desde componente hasta borde derecho del diagrama
-        S.append(dict(
-            type="line",
-            x0=xc, x1=635,
-            y0=cable_y_val, y1=cable_y_val,
-            line=dict(color=col, width=1, dash="dot"),
-            layer="above",
-        ))
-        # Punto de sensor en el componente
-        S.append(dict(
-            type="circle",
-            x0=xc - 4, x1=xc + 4,
-            y0=cable_y_val - 0.02, y1=cable_y_val + 0.02,
-            fillcolor=col,
-            line=dict(color=col, width=1),
-            layer="above",
-        ))
-        # Etiqueta del cable en el borde
-        A.append(dict(
-            x=635, y=cable_y_val,
-            text=f"<b style='color:{col}'>●</b>",
-            showarrow=False,
-            font=dict(size=10, color=col, family=C["mono"]),
-            xref="x", yref="y",
-            xanchor="left",
-        ))
- 
+
+        n_pts = max(6, int((x1 - x0) / 15))   # más puntos para componentes más anchos
+        xs = np.linspace(x0 + 5, x1 - 5, n_pts).tolist()  # +5/-5 para no salirse en bordes
+        ys = [0.5] * n_pts
+
         fig.add_trace(go.Scatter(
-            x=[xc], y=[cable_y_val],
+            x=xs, y=ys,
             mode="markers",
-            marker=dict(size=36, color="rgba(0,0,0,0)",
-                        line=dict(color="rgba(0,0,0,0)", width=0)),
-            customdata=[[zone_id, label, st, t_str, p_str]],
+            marker=dict(
+                size=60,                         # más pequeño, pero hay más puntos
+                color="rgba(0,0,0,0)",
+                symbol="square",
+                line=dict(color="rgba(0,0,0,0)", width=0),
+            ),
+            customdata=[[zone_id, label, st, t_str, p_str]] * n_pts,
             hoverinfo="none",
             hovertemplate=None,
             name=zone_id,
             showlegend=False,
         ))
- 
+
     return dcc.Graph(
         id="onespool-diagram",
         figure=fig,
@@ -939,16 +914,45 @@ def section_head(title):
     return html.Div(title, className="section-head")
 
 all_slider_groups = []
+PANEL_INPUTS = {
+    "background": C["panel"],
+    "border": f"1px solid {C['border']}",
+    "paddingTop":"5px","paddingLeft": "10px", "paddingRight": "10px",
+    "overflowY": "auto",
+    "height": "100vh",
+}
 SECTION_LABELS = {
     "sliders_vuelo":  "CONDICIONES DE VUELO",
     "sliders_diseno": "PUNTO DE DISEÑO",
 }
+all_slider_groups = []
 for eid, cfg in ENGINE_CONFIGS.items():
     group = []
-    for section_key, section_title in SECTION_LABELS.items():
-        group.append(section_head(section_title))
-        for sid, lbl, mn, mx, dfl, stp in cfg[section_key]:
-            group.append(make_slider(sid, lbl, mn, mx, dfl, stp))
+    
+    # Panel vuelo
+    group.append(html.Div([
+        section_head("CONDICIONES DE VUELO"),
+        *[make_slider(sid, lbl, mn, mx, dfl, stp)
+          for sid, lbl, mn, mx, dfl, stp in cfg["sliders_vuelo"]],
+    ], style={
+        "background": C["panel"],
+        "border": f"1px solid {C['border']}",
+        "paddingTop":"5px", "paddingLeft":"10px", "paddingRight":"10px",
+    }))
+
+    # Panel diseño
+    group.append(html.Div([
+        section_head("PUNTO DE DISEÑO"),
+        *[make_slider(sid, lbl, mn, mx, dfl, stp)
+          for sid, lbl, mn, mx, dfl, stp in cfg["sliders_diseno"]],
+    ], style={
+        "background": C["panel"],
+        "border": f"1px solid {C['border']}",
+        "paddingTop":"5px", "paddingLeft":"10px", "paddingRight":"10px",
+        "marginTop": "12px",
+    }))
+
+    # Sliders comp ocultos
     for sid, lbl, mn, mx, dfl, stp in cfg["sliders_comp"]:
         group.append(
             html.Div(
@@ -957,19 +961,15 @@ for eid, cfg in ENGINE_CONFIGS.items():
                 style={"display":"none"}
             )
         )
+
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
+
 PANEL_R = {"background":C["panel"],"borderLeft":f"1px solid {C['border']}",
             "paddingLeft":"12px","paddingRight":"12px",
             "overflowY":"auto","height":"calc(100vh - 80px)"}
 PANEL_C = {"overflowY":"auto","height":"calc(100vh - 80px)","paddingRight":"0"}
 
-PANEL_INPUTS = {
-    "background": C["panel"],
-    "border": f"1px solid {C['border']}",
-    "paddingTop":"5px","paddingLeft": "10px", "paddingRight": "10px",
-    "overflowY": "auto",
-    "height": "100vh",
-}
+
 PANEL_OUTPUTS_L = {
     "background": C["panel"],
     "border": f"1px solid {C['border']}",
@@ -981,7 +981,7 @@ PANEL_DIAGRAM = {
     "background": C["panel"],
     "border": f"1px solid {C['border']}",
     "paddingLeft": "8px", "paddingRight": "8px",
-    "height": "40vh",
+    "height": "50vh",
     "overflow": "hidden",
 }
 PANEL_GRAPHS = {
@@ -1005,7 +1005,7 @@ sim_screen = html.Div([
         html.Div([
             html.Span("● LIVE",           className="nav-badge live me-2"),
             html.Span(id="sim-eng-label", className="nav-badge me-2"),
-            html.Span("SESION: LAB-04",   className="nav-badge"),
+            # html.Span("SESION: LAB-04",   className="nav-badge"),
         ], style={"display":"flex","alignItems":"center"}),
     ], className="aerosim-nav"),
 
@@ -1015,12 +1015,10 @@ sim_screen = html.Div([
 
     # ── COL A (20%) — izquierda: sliders ─────────────────────────────────
     html.Div([
-        html.Div([
-            html.Div(all_slider_groups),
-        ], style=PANEL_INPUTS),
+        html.Div(all_slider_groups),
         html.Div(style={"height":"6px"}),
     ], style={"width":"20%","display":"flex","flexDirection":"column",
-              "paddingRight":"6px"}),
+            "paddingRight":"6px"}),
 
     # ── COL B (50%) — centro: diagrama + telemetría + métricas ───────────
     html.Div([
@@ -1031,10 +1029,8 @@ sim_screen = html.Div([
                      style={"padding":"8px 0 4px 0"}),
             html.Div(id="engine-diagram",
                      style={"lineHeight":"0","overflow":"hidden",
-                            "height":"calc(35vh - 30px)"}),
+                            "height":"calc(45vh - 30px)"}),
         ], style=PANEL_DIAGRAM),
-
-        
 
         # Panel B3 — métricas + gauges
         html.Div([
@@ -1070,15 +1066,11 @@ sim_screen = html.Div([
                 html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
                 html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
             ], className="chart-selector mb-1"),
-        ]),
-
-        # Gráficas
-        html.Div([
             html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False},
-                               style={"height":"260px"}),
+                               style={"height":"270px"}),
                      id="wrap-ts", className="graph-card mb-1"),
             html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False},
-                               style={"height":"260px"}),
+                               style={"height":"270px"}),
                      id="wrap-comp", className="graph-card mb-1",
                      style={"display":"none"}),
             # Telemetría oculta — ID necesario para el callback
@@ -1088,10 +1080,12 @@ sim_screen = html.Div([
 
         # Panel B2 — telemetría del componente clicado
         html.Div([
-            html.Div("TELEMETRÍA", className="section-head",
-                     style={"padding":"8px 0 4px 0"}),
+            html.Div([
+                html.Span("TELEMETRÍA", className="section-head mt-2"),
+                html.Span(id="tele-component-title", className="section-head mt-2"),
+            ], style={"display":"flex", "alignItems":"center", "gap":"6px"}),
             html.Div(id="comp-tele-panel"),
-        ], style=PANEL_OUTPUTS_L),
+        ], style={**PANEL_OUTPUTS_L, "marginTop":"12px"}),
 
         # Botón ACTUACIONES
         html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
@@ -1879,23 +1873,17 @@ _ETA_MAP = {
     "turbina":   ("os_et",    "η turbina",  "shaft_MW",  "Potencia eje [MW]"),
     "tobera":    ("os_enoz",  "η tobera",   "V_jet",     "V_jet [m/s]"),
 }
-_ZONE_COLORS = {
-    "difusor":   "#4a7abf",
-    "compresor": "#1a4d8f",
-    "camara":    "#b83232",
-    "turbina":   "#cc5500",
-    "tobera":    "#7055aa",
-}
+col = C["accent"]
  
  
 @app.callback(
     Output("comp-tele-panel", "children"),
+    Output("tele-component-title",  "children"),
     Input("onespool-diagram",   "clickData"),
     State("eta-override-store", "data"),
     prevent_initial_call=True,
 )
 def on_comp_click(clickData, eta_overrides):
-    """Dibuja el panel de telemetría al hacer click en una zona del diagrama."""
     if clickData is None:
         raise dash.exceptions.PreventUpdate
     try:
@@ -1905,37 +1893,40 @@ def on_comp_click(clickData, eta_overrides):
         zone_id, label, station, t_str, p_str = cd
     except Exception:
         raise dash.exceptions.PreventUpdate
- 
+
     if eta_overrides is None:
         eta_overrides = {}
- 
-    col = _ZONE_COLORS.get(zone_id, C["dim"])
+
+    col = C["accent"]
     eta_sid, eta_label, extra_key, extra_label = _ETA_MAP.get(
         zone_id, (None, None, None, None)
     )
-    # Valor actual del rendimiento (override si existe, si no el valor por defecto)
     eta_default = {
         "os_edif": 0.99, "os_ec": 0.92, "os_ecc": 0.99,
         "os_et": 0.88, "os_enoz": 0.99,
     }
     current_eta = eta_overrides.get(eta_sid, eta_default.get(eta_sid)) if eta_sid else None
- 
+
+    SUB = {"fontSize":"0.72em","lineHeight":"1"}
+    st_lbl = str(station)
+
     def row(lbl, val):
         return html.Tr([
             html.Td(lbl, className="tele-key"),
             html.Td(val, className="tele-val"),
         ])
- 
+
     rows = [
-        html.Tr([html.Td(label, colSpan=2, style={
-            "color": col, "fontFamily": C["head"], "fontWeight": "700",
-            "fontSize": "11px", "letterSpacing": "2px",
-            "paddingBottom": "6px", "borderBottom": f"1px solid {col}",
-        })]),
-        row("Tt salida", t_str),
-        row("Pt salida", p_str),
+        html.Tr([
+            html.Td(["T", html.Sub(f"t{st_lbl}", style=SUB)], className="tele-key"),
+            html.Td(t_str, className="tele-val"),
+        ]),
+        html.Tr([
+            html.Td(["P", html.Sub(f"t{st_lbl}", style=SUB)], className="tele-key"),
+            html.Td(p_str, className="tele-val"),
+        ]),
     ]
- 
+
     if eta_sid:
         rows.append(html.Tr([
             html.Td(eta_label, className="tele-key"),
@@ -1958,8 +1949,8 @@ def on_comp_click(clickData, eta_overrides):
             style={"fontFamily":C["mono"],"fontSize":"8px",
                    "color":C["dim"],"fontStyle":"italic","paddingTop":"3px"},
         )]))
- 
-    return [html.Table(rows, className="tele-table w-100")]
+
+    return [html.Table(rows, className="tele-table w-100"), f"— {label}"]
  
  
 @app.callback(

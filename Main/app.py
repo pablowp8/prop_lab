@@ -1149,11 +1149,12 @@ act_screen = html.Div([
 
     dbc.Container([
         dbc.Row([
-            # ── Izquierda: Empuje vs Mach (Despegue) ──────────────────
+            # ── Izquierda: Empuje vs T₀ (Despegue, flat-rated) ────────
             dbc.Col([
-                html.Div("Empuje vs Mach  —  Despegue", className="section-head mt-3"),
-                _act_slider("t0", "T₀ [°C]", -40, 50, 15, 1,
-                            {-40:"-40°", -20:"-20°", 0:"0°", 15:"ISA", 35:"35°", 50:"50°"}),
+                html.Div("Empuje vs T₀  —  Despegue (flat-rated)", className="section-head mt-3"),
+                _act_slider("t4tmax", "T₄ₜ,máx [K]", 1000, 2200, 1500, 5,
+                            {1000:"1000", 1300:"1300", 1500:"1500",
+                             1700:"1700", 1900:"1900", 2200:"2200"}),
                 html.Div(dcc.Graph(id="graph-act-thrust",
                                    config={"displayModeBar":False}),
                          className="graph-card"),
@@ -1164,77 +1165,9 @@ act_screen = html.Div([
                 _act_slider("alt", "Altitud [m]", 0, 13000, 10000, 100,
                             {0:"0", 3000:"3 km", 6000:"6 km",
                              10000:"10 km", 13000:"13 km"}),
-                html.Div(dcc.Graph(id="graph-act-tsfc",
-                                   config={"displayModeBar":False}),
-                         className="graph-card"),
-            ], width=6),
-        ], className="mt-1 g-2"),
-    ], fluid=True, style={"padding":"0 12px"}),
-
-    html.Div([
-        html.Span([html.Span("FISICA:", className="lbl"), " components.py"]),
-        html.Span([html.Span("UI:",     className="lbl"), " app.py"]),
-        html.Span("PROP-Lab v4.2 · 2025", style={"marginLeft":"auto"}),
-    ], className="sim-footer"),
-
-], id="screen-actuaciones",
-   style={"display":"none","minHeight":"100vh","background":C["bg"]})
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  PANTALLA ACTUACIONES
-# ══════════════════════════════════════════════════════════════════════════════
-
-_BTN_BACK_STYLE = {
-    "background":"transparent","border":"1px solid var(--border2)",
-    "color":"var(--dim)","fontFamily":"var(--head)","fontWeight":"700",
-    "fontSize":"10px","letterSpacing":"2px","padding":"4px 12px","cursor":"pointer",
-    "transition":"all 0.15s",
-}
-
-def _act_slider(slider_id, label, mn, mx, val, step, marks):
-    return html.Div([
-        html.Div([
-            html.Span(label, style={"fontSize":"11px","color":C["dim"],
-                                    "fontFamily":C["head"],"letterSpacing":"1px"}),
-            html.Span(id=f"act-val-{slider_id}", style={"fontFamily":C["mono"],
-                                                         "fontSize":"11px","color":C["accent"]}),
-        ], style={"display":"flex","justifyContent":"space-between","marginBottom":"3px"}),
-        dcc.Slider(id=f"act-sl-{slider_id}", min=mn, max=mx, value=val, step=step,
-                   marks=marks,
-                   tooltip={"always_visible":False},
-                   className="act-slider"),
-    ], style={"padding":"10px 14px 14px","background":C["panel"],
-              "border":"1px solid "+C["border"],"marginBottom":"8px"})
-
-act_screen = html.Div([
-    dbc.Navbar([
-        html.Span("PROP-Lab", className="aerosim-logo"),
-        html.Div([
-            html.Span(id="act-eng-label", className="nav-badge"),
-            html.Span("ACTUACIONES", className="nav-badge live"),
-            html.Button("← DISEÑO", id="btn-act-back", n_clicks=0,
-                        style=_BTN_BACK_STYLE),
-        ], style={"display":"flex","gap":"10px","alignItems":"center"}),
-    ], className="aerosim-nav", dark=False),
-
-    dbc.Container([
-        dbc.Row([
-            # ── Izquierda: Empuje vs Mach (Despegue) ──────────────────
-            dbc.Col([
-                html.Div("Empuje vs Mach  —  Despegue", className="section-head mt-3"),
-                _act_slider("t0", "T₀ [°C]", -40, 50, 15, 1,
-                            {-40:"-40°", -20:"-20°", 0:"0°", 15:"ISA", 35:"35°", 50:"50°"}),
-                html.Div(dcc.Graph(id="graph-act-thrust",
-                                   config={"displayModeBar":False}),
-                         className="graph-card"),
-            ], width=6),
-            # ── Derecha: TSFC vs Mach (Crucero) ───────────────────────
-            dbc.Col([
-                html.Div("Empuje vs Mach  —  Crucero", className="section-head mt-3"),
-                _act_slider("alt", "Altitud [m]", 0, 13000, 10000, 100,
-                            {0:"0", 3000:"3 km", 6000:"6 km",
-                             10000:"10 km", 13000:"13 km"}),
+                _act_slider("t4tcr", "T₄ₜ [K]  (palanca de gases)", 800, 2200, 1500, 5,
+                            {800:"800", 1100:"1100", 1400:"1400",
+                             1700:"1700", 2000:"2000", 2200:"2200"}),
                 html.Div(dcc.Graph(id="graph-act-tsfc",
                                    config={"displayModeBar":False}),
                          className="graph-card"),
@@ -1838,14 +1771,18 @@ def nav_actuaciones(_n_fwd, _n_back, engine_type):
 
 # ── Labels reactivos de los sliders de actuaciones ───────────────────────────
 @app.callback(
-    Output("act-val-t0",  "children"),
-    Output("act-val-alt", "children"),
-    Input("act-sl-t0",    "value"),
-    Input("act-sl-alt",   "value"),
+    Output("act-val-t4tmax", "children"),
+    Output("act-val-alt",    "children"),
+    Output("act-val-t4tcr",  "children"),
+    Input("act-sl-t4tmax",   "value"),
+    Input("act-sl-alt",      "value"),
+    Input("act-sl-t4tcr",    "value"),
 )
-def act_slider_labels(t0, alt):
-    return (f"{t0:+.0f} °C" if t0 is not None else "—",
-            f"{int(alt):,} m  ({alt/1000:.1f} km)" if alt is not None else "—")
+def act_slider_labels(t4tmax, alt, t4tcr):
+    return (f"{int(t4tmax)} K"                        if t4tmax is not None else "—",
+            f"{int(alt):,} m  ({alt/1000:.1f} km)"    if alt    is not None else "—",
+            f"{int(t4tcr)} K"                         if t4tcr  is not None else "—")
+
 
 
 # ── Cálculo de curvas de actuación ────────────────────────────────────────────
@@ -1853,13 +1790,14 @@ def act_slider_labels(t0, alt):
     Output("graph-act-thrust", "figure"),
     Output("graph-act-tsfc",   "figure"),
     Input("btn-actuaciones",   "n_clicks"),
-    Input("act-sl-t0",         "value"),
+    Input("act-sl-t4tmax",     "value"),
     Input("act-sl-alt",        "value"),
+    Input("act-sl-t4tcr",      "value"),     # ← NUEVA
     State("active-engine",     "data"),
     *[State(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
     prevent_initial_call=True,
 )
-def compute_actuaciones(_n, t0_c, alt_m, engine_type, *all_vals):
+def compute_actuaciones(_n, t4tmax_K, alt_m, t4tcr_K, engine_type, *all_vals):
     if not engine_type:
         raise dash.exceptions.PreventUpdate
 
@@ -1875,53 +1813,112 @@ def compute_actuaciones(_n, t0_c, alt_m, engine_type, *all_vals):
             p[sid] = all_vals[idx] if all_vals[idx] is not None else default
     base = cfg["sweep_base"](p)
 
-    # Rango de Mach según tipo de motor
+    # Rango de Mach según tipo de motor (sólo para gráfica de crucero)
     mach_max = {"OneSpoolTurboprop": 0.7,
                 "SingleFlowTurbofan": 1.0}.get(engine_type, 2.0)
     machs = np.linspace(0, mach_max, 45)
 
-    t0_k  = (t0_c  if t0_c  is not None else 15) + 273.15
     alt   = alt_m if alt_m is not None else 10000
     T_cr, P_cr = _isa(alt)
 
-    def run(mach, T_amb, P_amb):
+    def run(mach, T_amb, P_amb, tit_override=None):
         try:
-            r = cls().simulate(**{**base, "T_amb": T_amb, "P_amb": P_amb, "mach": mach})
+            params = {**base, "T_amb": T_amb, "P_amb": P_amb, "mach": mach}
+            if tit_override is not None:
+                params["tit"] = tit_override
+            r = cls().simulate(**params)
             return r["thrust_kN"], r["TSFC_mg"]
         except Exception:
             return None, None
 
-    # ── Empuje vs Mach (condiciones de despegue: h=0, T=slider) ──────
-    P_sl = 101325.0   # presión ISA a nivel del mar
-    x_f, y_f = [], []
-    for m in machs:
-        thrust, _ = run(m, t0_k, P_sl)
-        if thrust is not None:
-            x_f.append(m); y_f.append(thrust)
+    # ══════════════════════════════════════════════════════════════════════════
+    #  ── Empuje vs T₀ (Despegue: h=0, M=M_diseño, flat-rating) ────────────────
+    # ══════════════════════════════════════════════════════════════════════════
+    P_sl   = 101325.0
+    GAMMA  = 1.4
+    M_des  = base["mach"]                       # Mach de diseño
+    tit_d  = base["tit"]                        # T4t de diseño [K]
+    T0_d_K = base["T_amb"]                      # T0 de diseño [K]
 
-    title_f = f"Empuje vs Mach  —  T₀ = {t0_c:+.0f} °C,  h = 0 m"
+    # Relación T4t/T2t en el punto de diseño (T2t adiabática, sin pérdidas)
+    T2t_d  = T0_d_K * (1 + 0.5*(GAMMA-1) * M_des**2)
+    ratio  = tit_d / T2t_d                      # constante de control
+
+    # Cap inferior por seguridad: si T4tmax < tit_design, igualmente respetamos
+    t4tmax_K = t4tmax_K if t4tmax_K is not None else 1500
+
+    # Barrido de T0 (de -40 °C a +60 °C)
+    t0_sweep_C = np.linspace(-40, 60, 100)
+    x_t0, y_F, t4t_used = [], [], []
+    for t0c in t0_sweep_C:
+        t0k    = t0c + 273.15
+        T2t    = t0k * (1 + 0.5*(GAMMA-1) * M_des**2)
+        tit_p  = ratio * T2t                    # propuesta a ratio constante
+        tit_a  = min(tit_p, t4tmax_K)           # limitada por T4t,máx
+        F, _   = run(M_des, t0k, P_sl, tit_override=tit_a)
+        if F is not None:
+            x_t0.append(t0c)
+            y_F.append(F)
+            t4t_used.append(tit_a)
+
+    # T0 del codo (donde T4t = T4t,máx con ratio constante)
+    # ratio · T0_corner · (1 + 0.5(γ-1)M²) = T4t,máx
+    denom = ratio * (1 + 0.5*(GAMMA-1) * M_des**2)
+    T0_corner_K = t4tmax_K / denom if denom > 0 else None
+    T0_corner_C = T0_corner_K - 273.15 if T0_corner_K is not None else None
+
+    title_f = (f"Empuje vs T₀  —  h = 0,  M₀ = {M_des:.2f},  "
+               f"T₄ₜ,máx = {int(t4tmax_K)} K  |  (T₄ₜ/T₂ₜ)<sub>diseño</sub> = {ratio:.2f}")
     fig_thrust = go.Figure()
+
+    # Sombreado de zonas si el codo cae dentro del rango
+    if (T0_corner_C is not None and y_F
+        and x_t0[0] < T0_corner_C < x_t0[-1]):
+        # Zona "T4t/T2t = const" (a la izquierda del codo)
+        fig_thrust.add_vrect(
+            x0=x_t0[0], x1=T0_corner_C,
+            fillcolor=_rgba(C["accent3"], 0.06), line_width=0, layer="below",
+            annotation_text="T₄ₜ/T₂ₜ = const",
+            annotation_position="top left",
+            annotation=dict(font=dict(size=9, color=C["dim"], family=C["mono"])),
+        )
+        # Zona "T4t = T4t,máx" (a la derecha del codo)
+        fig_thrust.add_vrect(
+            x0=T0_corner_C, x1=x_t0[-1],
+            fillcolor=_rgba(C["accent2"], 0.07), line_width=0, layer="below",
+            annotation_text="T₄ₜ = T₄ₜ,máx",
+            annotation_position="top right",
+            annotation=dict(font=dict(size=9, color=C["dim"], family=C["mono"])),
+        )
+
+    # Curva de empuje
     fig_thrust.add_trace(go.Scatter(
-        x=x_f, y=y_f, mode="lines",
+        x=x_t0, y=y_F, mode="lines",
         line=dict(color=color, width=2.5),
         fill="tozeroy", fillcolor=_rgba(color, 0.07),
-        hovertemplate="M = %{x:.3f}<br>F = %{y:.2f} kN<extra></extra>",
+        customdata=np.array(t4t_used).reshape(-1, 1),
+        hovertemplate=("T₀ = %{x:+.1f} °C<br>"
+                       "F = %{y:.2f} kN<br>"
+                       "T₄ₜ = %{customdata[0]:.0f} K<extra></extra>"),
         showlegend=False,
     ))
     fig_thrust.update_layout(**_plot_layout(title_f))
-    fig_thrust.update_xaxes(**_ax("Número de Mach  [ — ]"))
+    fig_thrust.update_xaxes(**_ax("Temperatura ambiente  T₀  [°C]"))
     fig_thrust.update_yaxes(**_ax("Empuje  [kN]"))
 
-    # ── Empuje vs Mach (condiciones de crucero: h=slider, T=ISA) ────
+    # ── Empuje vs Mach (Crucero: h=slider, T=ISA, T₄ₜ=slider) ────────
+    t4tcr_K = t4tcr_K if t4tcr_K is not None else 1500
+
     x_s, y_s = [], []
     for m in machs:
-        thrust_cr, _ = run(m, T_cr, P_cr)
+        thrust_cr, _ = run(m, T_cr, P_cr, tit_override=t4tcr_K)
         if thrust_cr is not None:
             x_s.append(m); y_s.append(thrust_cr)
 
     h_km    = alt / 1000
     T_isa   = T_cr - 273.15
-    title_s = f"Empuje vs Mach  —  h = {h_km:.1f} km,  T_ISA = {T_isa:.1f} °C"
+    title_s = (f"Empuje vs Mach  —  h = {h_km:.1f} km,  "
+               f"T_ISA = {T_isa:.1f} °C,  T₄ₜ = {int(t4tcr_K)} K")
     fig_tsfc = go.Figure()
     fig_tsfc.add_trace(go.Scatter(
         x=x_s, y=y_s, mode="lines",

@@ -36,6 +36,7 @@ LHV   = 43_200_000   # Poder calorífico inferior Jet-A [J/kg]
 GAMMA = 1.4
 R_GAS = 287          # [J/kg·K]
 CP    = 1004.3       # [J/kg·K]
+TIT_LIMIT = 1900     # K
 
 
 # ── Utilidades atmosféricas (módulo) ──────────────────────────────────────────
@@ -73,7 +74,7 @@ class Difussor(Component):
 class Compressor(Component):
     def calculate(self, t_in, p_in, pressure_ratio):
         p_out       = p_in * pressure_ratio
-        t_out       = t_in * (pressure_ratio ** ((self.gamma - 1) / self.gamma)/ self.eta + 1)
+        t_out       = t_in * ((pressure_ratio ** ((self.gamma - 1) / self.gamma)-1)/ self.eta + 1)
         work        = self.cp * (t_out - t_in)
         return t_out, p_out, work
 
@@ -82,12 +83,12 @@ class CombustionChamber(Component):
     def calculate(self, t_in, p_in, tit, pressure_ratio=1.0):
         p_out      = p_in * pressure_ratio
         heat_added = self.cp * (tit - t_in)
-        return tit, p_out, heat_added
+        return tit, p_out
 
 class Turbine(Component):
     def calculate(self, t_in, p_in, required_work):
         t_out = t_in - (required_work / self.cp)
-        p_out = p_in * (1 - (1-t_out/t_in) / self.eta) ** (self.gamma / (self.gamma - 1))
+        p_out = p_in * (1 - (1/self.eta)*(1-t_out/t_in) ** (self.gamma / (self.gamma - 1)))
         return t_out, p_out
 class Postcombustor(Component):
     def calculate(self, t_in, p_in):
@@ -97,7 +98,7 @@ class Postcombustor(Component):
 class Nozzle(Component):
     def calculate(self, t_in, p_in, t_a, p_a, conf='CON'):
         if conf == 'CON':
-            param_pressure = p_a / p_in
+            param_pressure = p_in / p_a
             param_gamma    = ((self.gamma + 1) / 2) ** (self.gamma / (self.gamma - 1))
             if param_pressure <= param_gamma:       # adaptada
                 p_out = p_a
@@ -181,13 +182,11 @@ def _fill_df(df, local_vars, mapping):
 class OneSpoolEngine:
     """Turbojet monoeje: Difusor → Compresor → Cámara → Turbina → Tobera."""
 
-    TIT_LIMIT = 1600   # K — alerta de integridad estructural
-
     def __init__(self):
-        self.dif  = Difussor(eta=0.9)
-        self.comp = Compressor(eta=0.95)
-        self.cc   = CombustionChamber(eta=0.95)
-        self.turb = Turbine(eta=0.92)
+        self.dif  = Difussor(eta=1)
+        self.comp = Compressor(eta=0.8)
+        self.cc   = CombustionChamber(eta=1)
+        self.turb = Turbine(eta=1)
         self.pc   = Postcombustor()
         self.nozz = Nozzle()
 
@@ -214,7 +213,7 @@ class OneSpoolEngine:
 
         T_2t, P_2t         = self.dif.calculate(T_amb, P_amb, mach)
         T_3t, P_3t, W_c    = self.comp.calculate(T_2t, P_2t, pi_23)
-        T_4t, P_4t, _      = self.cc.calculate(T_3t, P_3t, tit)
+        T_4t, P_4t         = self.cc.calculate(T_3t, P_3t, tit)
         T_5t, P_5t         = self.turb.calculate(T_4t, P_4t, W_c)
         T_7t, P_7t         = self.pc.calculate(T_5t, P_5t)
         T_9, P_9, V_jet    = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb)
@@ -231,22 +230,20 @@ class OneSpoolEngine:
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_amb/1000)
         r["df"]          = df
         r["engine_type"] = "OneSpoolEngine"
-        r["tit_limit"]   = self.TIT_LIMIT
+        r["tit_limit"]   = TIT_LIMIT
         return r
 
 
 class TwinSpoolEngine:
     """Turbojet bieje: LPC → HPC → Cámara → HPT → LPT → Tobera."""
 
-    TIT_LIMIT = 1700
-
     def __init__(self):
         self.dif           = Difussor()
-        self.lp_compressor = Compressor(eta=0.91)
-        self.hp_compressor = Compressor(eta=0.85)
+        self.lp_compressor = Compressor(eta=1)
+        self.hp_compressor = Compressor(eta=1)
         self.cc            = CombustionChamber()
-        self.hp_turbine    = Turbine(eta=0.92)
-        self.lp_turbine    = Turbine(eta=0.94)
+        self.hp_turbine    = Turbine(eta=1)
+        self.lp_turbine    = Turbine(eta=1)
         self.pc            = Postcombustor()
         self.nozz          = Nozzle()
 
@@ -266,7 +263,7 @@ class TwinSpoolEngine:
         T_2t,  P_2t           = self.dif.calculate(T_amb, P_amb, mach)
         T_25t, P_25t, W_lpc   = self.lp_compressor.calculate(T_2t,  P_2t,  pi_lpc)
         T_3t,  P_3t,  W_hpc   = self.hp_compressor.calculate(T_25t, P_25t, pi_hpc)
-        T_4t,  P_4t,  _       = self.cc.calculate(T_3t, P_3t, tit)
+        T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
         T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_hpc)
         T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_lpc)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
@@ -286,14 +283,12 @@ class TwinSpoolEngine:
         r["df"]          = df
         r["opr"]         = opr
         r["engine_type"] = "TwinSpoolEngine"
-        r["tit_limit"]   = self.TIT_LIMIT
+        r["tit_limit"]   = TIT_LIMIT
         return r
 
 
 class SingleFlowTurbofan:
     """Turbofán: Fan → (bypass + HPC) → Cámara → HPT → LPT → Tobera."""
-
-    TIT_LIMIT = 1850
 
     def __init__(self):
         self.dif        = Difussor()
@@ -321,7 +316,7 @@ class SingleFlowTurbofan:
         T_2t,  P_2t           = self.dif.calculate(T_amb, P_amb, mach)
         T_3t,  P_3t,  W_c     = self.comp.calculate(T_2t, P_2t, pi_23)
         T_13t, P_13t, W_fan   = self.fan.calculate(T_2t,  P_2t, pi_fan)
-        T_4t,  P_4t,  _       = self.cc.calculate(T_3t, P_3t, tit)
+        T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
         T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_c)
         T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_fan * bpr)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
@@ -348,18 +343,16 @@ class SingleFlowTurbofan:
         r["opr"]         = opr
         r["bpr"]         = bpr
         r["engine_type"] = "SingleFlowTurbofan"
-        r["tit_limit"]   = self.TIT_LIMIT
+        r["tit_limit"]   = TIT_LIMIT
         return r
 
 
 class OneSpoolTurboprop:
     """Turbohélice: Compresor → Cámara → HPT → LPT → Tobera residual."""
 
-    TIT_LIMIT = 1500
-
     def __init__(self):
         self.dif        = Difussor()
-        self.comp       = Compressor(eta=1.0)
+        self.comp       = Compressor(eta=0.8)
         self.cc         = CombustionChamber()
         self.hp_turbine = Turbine(eta=1.0)
         self.lp_turbine = Turbine(eta=1.0)
@@ -384,7 +377,7 @@ class OneSpoolTurboprop:
 
         T_2t,  P_2t           = self.dif.calculate(T_amb, P_amb, mach)
         T_3t,  P_3t,  W_c     = self.comp.calculate(T_2t, P_2t, pi_23)
-        T_4t,  P_4t,  _       = self.cc.calculate(T_3t, P_3t, tit)
+        T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
         T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_c)
         T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_h * eta_m)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
@@ -432,7 +425,7 @@ class OneSpoolTurboprop:
             "df":          df,
             "opr":         pi_23,
             "engine_type": "OneSpoolTurboprop",
-            "tit_limit":   self.TIT_LIMIT,
+            "tit_limit":   TIT_LIMIT,
         }
 
 
@@ -493,14 +486,14 @@ def _engine_class(engine_type):
 if __name__ == "__main__":
     T, P = isa_atmosphere(0, 15)
 
-    r1 = OneSpoolEngine().simulate(T, P, 0, 20, 10, 1400)
+    r1 = OneSpoolEngine().simulate(T, P, 0, 30, 10, 1400)
     print(f"Monoeje   — F={r1['thrust_kN']:.2f} kN  TSFC={r1['TSFC_mg']:.2f} mg/Ns")
 
-    r2 = TwinSpoolEngine().simulate(T, P, 0, 20, 1.6, 12, 1450)
-    print(f"Bieje     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
+    # r2 = TwinSpoolEngine().simulate(T, P, 0, 20, 1.6, 12, 1450)
+    # print(f"Bieje     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
 
-    r3 = SingleFlowTurbofan().simulate(T, P, 0, 90, 25, 1500, 1.4, 0.8)
-    print(f"Turbofan  — F={r3['thrust_kN']:.2f} kN  TSFC={r3['TSFC_mg']:.2f} mg/Ns")
+    # r3 = SingleFlowTurbofan().simulate(T, P, 0, 90, 25, 1500, 1.4, 0.8)
+    # print(f"Turbofan  — F={r3['thrust_kN']:.2f} kN  TSFC={r3['TSFC_mg']:.2f} mg/Ns")
 
-    r4 = OneSpoolTurboprop().simulate(T, P, 0, 90, 25, 1500, 200_000, 0.7)
-    print(f"Turboprop — F={r4['thrust_kN']:.2f} kN  TSFC={r4['TSFC_mg']:.2f} mg/Ns")
+    # r4 = OneSpoolTurboprop().simulate(T, P, 0, 90, 25, 1500, 200_000, 0.7)
+    # print(f"Turboprop — F={r4['thrust_kN']:.2f} kN  TSFC={r4['TSFC_mg']:.2f} mg/Ns")

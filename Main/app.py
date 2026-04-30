@@ -1,4 +1,4 @@
-"""
+﻿"""
 AeroSim v4.2 — app.py
 Pantalla 1 : Menú de selección de motor
 Pantalla 2 : Simulador (sliders · métricas · esquema SVG · gráficas · telemetría)
@@ -63,11 +63,11 @@ ENGINE_CONFIGS = {
         ],
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
-            ("os_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
-            ("os_ec",    "\u03B7 compresor",  0.6, 0.99, 0.92, 0.01),
-            ("os_ecc",   "\u03B7 camara",     0.6, 0.99, 0.99, 0.01),
-            ("os_et",    "\u03B7 turbina",    0.6, 0.99, 0.88, 0.01),
-            ("os_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
+            ("os_edif",  "\u03B7 difusor",    0.6, 1, 1, 0.01),
+            ("os_ec",    "\u03B7 compresor",  0.6, 1, 1, 0.01),
+            ("os_ecc",   "\u03B7 camara",     0.6, 1, 1, 0.01),
+            ("os_et",    "\u03B7 turbina",    0.6, 1, 1, 0.01),
+            ("os_enoz",  "\u03B7 tobera",     0.6, 1, 1, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine,
         "runner": lambda p: sim.OneSpoolEngine().simulate(
@@ -100,13 +100,13 @@ ENGINE_CONFIGS = {
             ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
-            ("ts_edif",  "\u03B7 difusor",     0.6, 0.99, 0.99, 0.01),
-            ("ts_elpc",  "\u03B7 comp. LP",    0.6, 0.99, 0.91, 0.01),
-            ("ts_ehpc",  "\u03B7 comp. HP",    0.6, 0.99, 0.85, 0.01),
-            ("ts_ecc",   "\u03B7 camara",      0.6, 0.99, 0.99, 0.01),
-            ("ts_ehpt",  "\u03B7 turb. HP",    0.6, 0.99, 0.92, 0.01),
-            ("ts_elpt",  "\u03B7 turb. LP",    0.6, 0.99, 0.94, 0.01),
-            ("ts_enoz",  "\u03B7 tobera",      0.6, 0.99, 0.99, 0.01),
+            ("ts_edif",  "\u03B7 difusor",     0.6, 1, 1, 0.01),
+            ("ts_elpc",  "\u03B7 comp. LP",    0.6, 1, 1, 0.01),
+            ("ts_ehpc",  "\u03B7 comp. HP",    0.6, 1, 1, 0.01),
+            ("ts_ecc",   "\u03B7 camara",      0.6, 1, 1, 0.01),
+            ("ts_ehpt",  "\u03B7 turb. HP",    0.6, 1, 1, 0.01),
+            ("ts_elpt",  "\u03B7 turb. LP",    0.6, 1, 1, 0.01),
+            ("ts_enoz",  "\u03B7 tobera",      0.6, 1, 1, 0.01),
 
         ],
         "engine_cls": sim.TwinSpoolEngine,
@@ -144,13 +144,13 @@ ENGINE_CONFIGS = {
             ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
         ],
         "sliders_comp": [
-            ("tf_edif",  "\u03B7 difusor",   0.6, 0.99, 0.99, 0.01),
-            ("tf_efan",  "\u03B7 fan",       0.6, 0.99, 1.0,  0.01),
-            ("tf_ec",    "\u03B7 compresor", 0.6, 0.99, 1.0,  0.01),
-            ("tf_ecc",   "\u03B7 camara",    0.6, 0.99, 0.99, 0.01),
-            ("tf_ehpt",  "\u03B7 turb. HP",  0.6, 0.99, 1.0,  0.01),
-            ("tf_elpt",  "\u03B7 turb. LP",  0.6, 0.99, 1.0,  0.01),
-            ("tf_enoz",  "\u03B7 tobera",    0.6, 0.99, 0.99, 0.01),
+            ("tf_edif",  "\u03B7 difusor",   0.6, 1, 1, 0.01),
+            ("tf_efan",  "\u03B7 fan",       0.6, 1, 1.0,  0.01),
+            ("tf_ec",    "\u03B7 compresor", 0.6, 1, 1.0,  0.01),
+            ("tf_ecc",   "\u03B7 camara",    0.6, 1, 1, 0.01),
+            ("tf_ehpt",  "\u03B7 turb. HP",  0.6, 1, 1.0,  0.01),
+            ("tf_elpt",  "\u03B7 turb. LP",  0.6, 1, 1.0,  0.01),
+            ("tf_enoz",  "\u03B7 tobera",    0.6, 1, 1, 0.01),
 
         ],
         "engine_cls": sim.SingleFlowTurbofan,
@@ -188,15 +188,15 @@ ENGINE_CONFIGS = {
             ("tp_pi",   "\u03C0\u2082\u2083",       2,   30,   25, 0.1),
             ("tp_G",    "G [kg/s]",                 5,  200,   90,  1),
             ("tp_Wh",    "W\u2095 [kW]",       10, 2000,  200, 10),
-            ("tp_etam",  "\u03B7 mecanica",   0.5, 0.99, 0.70, 0.01),
+            ("tp_etam",  "\u03B7 mecanica",   0.5, 1, 1, 0.01),
         ],
         "sliders_comp": [
-            ("tp_edif",  "\u03B7 difusor",    0.6, 0.99, 0.99, 0.01),
-            ("tp_ec",    "\u03B7 compresor",  0.6, 0.99, 1.0,  0.01),
-            ("tp_ecc",   "\u03B7 camara",     0.6, 0.99, 0.99, 0.01),
-            ("tp_ehpt",  "\u03B7 turb. HP",   0.6, 0.99, 1.0,  0.01),
-            ("tp_elpt",  "\u03B7 turb. LP",   0.6, 0.99, 1.0,  0.01),
-            ("tp_enoz",  "\u03B7 tobera",     0.6, 0.99, 0.99, 0.01),
+            ("tp_edif",  "\u03B7 difusor",    0.6, 1, 1, 0.01),
+            ("tp_ec",    "\u03B7 compresor",  0.6, 1, 1.0,  0.01),
+            ("tp_ecc",   "\u03B7 camara",     0.6, 1, 1, 0.01),
+            ("tp_ehpt",  "\u03B7 turb. HP",   0.6, 1, 1.0,  0.01),
+            ("tp_elpt",  "\u03B7 turb. LP",   0.6, 1, 1.0,  0.01),
+            ("tp_enoz",  "\u03B7 tobera",     0.6, 1, 1, 0.01),
 
         ],
         "engine_cls": sim.OneSpoolTurboprop,
@@ -1973,8 +1973,8 @@ def on_comp_click(clickData, eta_overrides):
         zone_id, (None, None, None, None)
     )
     eta_default = {
-        "os_edif": 0.99, "os_ec": 0.92, "os_ecc": 0.99,
-        "os_et": 0.88, "os_enoz": 0.99,
+        "os_edif": 1, "os_ec": 1, "os_ecc": 1,
+        "os_et": 1, "os_enoz": 1,
     }
     current_eta = eta_overrides.get(eta_sid, eta_default.get(eta_sid)) if eta_sid else None
 
@@ -2051,3 +2051,4 @@ def update_eta_store(values, ids, current_store):
 
 if __name__ == "__main__":
     app.run(debug=True)
+

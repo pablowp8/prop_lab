@@ -922,7 +922,7 @@ PANEL_INPUTS = {
     "height": "100vh",
 }
 SECTION_LABELS = {
-    "sliders_vuelo":  "CONDICIONES DE VUELO",
+    "sliders_vuelo":  "CONDICIONES EN BANCO",
     "sliders_diseno": "PUNTO DE DISEÑO",
 }
 all_slider_groups = []
@@ -931,7 +931,7 @@ for eid, cfg in ENGINE_CONFIGS.items():
     
     # Panel vuelo
     group.append(html.Div([
-        section_head("CONDICIONES DE VUELO"),
+        section_head("CONDICIONES EN BANCO"),
         *[make_slider(sid, lbl, mn, mx, dfl, stp)
           for sid, lbl, mn, mx, dfl, stp in cfg["sliders_vuelo"]],
     ], style={
@@ -989,7 +989,7 @@ PANEL_GRAPHS = {
     "border": f"1px solid {C['border']}",
     "paddingLeft": "8px", "paddingRight": "8px",
     "overflowY": "auto",
-    "height": "calc(100vh - 80px)",
+    "height": "calc(60vh - 80px)",
 }
 
 sim_screen = html.Div([
@@ -1013,14 +1013,14 @@ sim_screen = html.Div([
 
     html.Div([
 
-    # ── COL A (20%) — izquierda: sliders ─────────────────────────────────
+    # ── COL A (15%) — izquierda: sliders ─────────────────────────────────
     html.Div([
         html.Div(all_slider_groups),
         html.Div(style={"height":"6px"}),
-    ], style={"width":"20%","display":"flex","flexDirection":"column",
+    ], style={"width":"15%","display":"flex","flexDirection":"column",
             "paddingRight":"6px"}),
 
-    # ── COL B (50%) — centro: diagrama + telemetría + métricas ───────────
+    # ── COL B (60%) — centro: diagrama + telemetría + métricas ───────────
     html.Div([
 
         # Panel B1 — título + diagrama
@@ -1043,17 +1043,17 @@ sim_screen = html.Div([
                 dbc.Col(html.Div(
                     dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
                               style={"height":"100%","width":"100%"}),
-                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                    style={"aspectRatio":"1/1","maxWidth":"300px","margin":"0 auto"}),
                 width=6),
                 dbc.Col(html.Div(
                     dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
                               style={"height":"100%","width":"100%"}),
-                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
+                    style={"aspectRatio":"1/1","maxWidth":"300px","margin":"0 auto"}),
                 width=6),
             ], className="g-0 mt-1"),
         ], style={"paddingTop":"4px"}),
 
-    ], style={"width":"50%","paddingLeft":"6px","paddingRight":"6px",
+    ], style={"width":"65%","paddingLeft":"6px","paddingRight":"6px",
               "display":"flex","flexDirection":"column"}),
 
     # ── COL C (30%) — derecha: selector + gráficas + actuaciones ─────────
@@ -1091,7 +1091,7 @@ sim_screen = html.Div([
         html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
                     className="btn-actuaciones mt-3"),
 
-    ], style={"width":"30%","paddingLeft":"6px",
+    ], style={"width":"20%","paddingLeft":"6px",
               "display":"flex","flexDirection":"column"}),
 
 ], style={

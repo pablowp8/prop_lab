@@ -85,8 +85,8 @@ ENGINE_CONFIGS = {
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Turborreactor Bieje",
-        "subtitle": "Twin Spool Turbojet",
+        "label":    "Turborreactor Monoeje + Postcombustor",
+        "subtitle": "Single Spool Turbojet + Postcombustor",
         "color":    "#b83232",
         "sliders_vuelo": [
             ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),

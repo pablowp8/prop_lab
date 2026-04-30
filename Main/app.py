@@ -85,7 +85,7 @@ ENGINE_CONFIGS = {
         },
     },
     "TwinSpoolEngine": {
-        "label":    "Turborreactor Monoeje + Postcombustor",
+        "label":    "Monoeje + Postcombustor",
         "subtitle": "Single Spool Turbojet + Postcombustor",
         "color":    "#b83232",
         "sliders_vuelo": [

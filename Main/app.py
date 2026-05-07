@@ -255,12 +255,15 @@ def make_slider(sid, label, mn, mx, dfl, stp):
 
 def metric_card(label, mid, unit, cls=""):
     return html.Div([
-        html.Div(label, className="metric-label"),
+        html.Div(label, className="metric-label",
+                 style={"fontSize":"0.55rem","marginBottom":"1px"}),
         html.Div([
-            html.Span("--", id=f"m-{mid}", className="metric-val"),
-            html.Span(unit, className="metric-unit"),
+            html.Span("--", id=f"m-{mid}", className="metric-val",
+                      style={"fontSize":"0.82rem"}),
+            html.Span(unit, className="metric-unit",
+                      style={"fontSize":"0.52rem"}),
         ]),
-    ], className=f"metric-card {cls} mb-1")
+    ], className=f"metric-card {cls}", style={"padding":"3px 6px","marginBottom":"3px"})
 
 
 
@@ -952,15 +955,31 @@ for eid, cfg in ENGINE_CONFIGS.items():
         "marginTop": "12px",
     }))
 
-    # Sliders comp ocultos
-    for sid, lbl, mn, mx, dfl, stp in cfg["sliders_comp"]:
-        group.append(
-            html.Div(
-                dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
-                           marks=None, tooltip={"always_visible":False}),
-                style={"display":"none"}
-            )
-        )
+    # Panel desplegable de rendimientos (η)
+    eta_sliders_content = html.Div([
+        *[make_slider(sid, lbl, mn, mx, dfl, stp)
+          for sid, lbl, mn, mx, dfl, stp in cfg["sliders_comp"]],
+    ], id=f"eta-panel-{eid}", style={"display":"none",
+        "background": C["panel2"],
+        "border": f"1px solid {C['border']}",
+        "paddingTop":"5px","paddingLeft":"10px","paddingRight":"10px",
+        "marginTop":"4px",
+    })
+    group.append(html.Div([
+        html.Div([
+            html.Span("RENDIMIENTOS", style={"fontFamily":C["head"],"fontWeight":"700",
+                                             "fontSize":"0.7rem","letterSpacing":"3px",
+                                             "color":C["dim"]}),
+            html.Button("▾", id=f"btn-eta-toggle-{eid}", n_clicks=0,
+                        style={"background":"transparent","border":"none",
+                               "color":C["dim"],"cursor":"pointer","fontSize":"14px",
+                               "float":"right","padding":"0 4px"}),
+        ], style={"display":"flex","justifyContent":"space-between","alignItems":"center",
+                  "background":C["panel"],"border":f"1px solid {C['border']}",
+                  "padding":"6px 10px","marginTop":"8px","cursor":"pointer"},
+           id=f"eta-header-{eid}"),
+        eta_sliders_content,
+    ]))
 
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
 
@@ -1027,31 +1046,68 @@ sim_screen = html.Div([
         html.Div([
             html.Div(id="sim-eng-title", className="section-head",
                      style={"padding":"8px 0 4px 0"}),
-            html.Div(id="engine-diagram",
-                     style={"lineHeight":"0","overflow":"hidden",
-                            "height":"calc(45vh - 30px)"}),
-        ], style=PANEL_DIAGRAM),
+            html.Div([
+                dcc.Graph(
+                    id="onespool-diagram",
+                    config={"displayModeBar": False, "staticPlot": False},
+                    style={"height":"100%","width":"100%","display":"none"},
+                    figure={"data":[],"layout":{"paper_bgcolor":C["panel"],
+                            "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}},
+                ),
+                html.Div(id="other-diagram",
+                         style={"height":"100%","width":"100%","display":"none"}),
+            ], id="engine-diagram",
+               style={"lineHeight":"0","overflow":"hidden",
+                      "height":"calc(45vh - 30px)"}),
+        ], style={**PANEL_DIAGRAM, "flex":"0 0 auto"}),
 
-        # Panel B3 — métricas + gauges
+        # Panel B3 — gauges (lado a lado) + metric cards + station card
         html.Div([
-            #dbc.Row([
-            #    dbc.Col(metric_card("Empuje neto",        "thrust","kN",   "good"), width=4),
-            #    dbc.Col(metric_card("Consumo específico", "tsfc",  "mg/Ns",""),     width=4),
-            #    dbc.Col(metric_card("Combustible",        "fuel",  "kg/s", "warn"), width=4),
-            #], className="g-1 mt-1"),
-            dbc.Row([
-                dbc.Col(html.Div(
+
+            # ── Fila superior: relojes + cards ───────────────────────────
+            html.Div([
+
+                # Reloj Empuje
+                html.Div(
                     dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
                               style={"height":"100%","width":"100%"}),
-                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
-                width=6),
-                dbc.Col(html.Div(
+                    style={"width":"22%","height":"22vh","flexShrink":"0"}),
+
+                # Reloj EPR
+                html.Div(
                     dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
                               style={"height":"100%","width":"100%"}),
-                    style={"aspectRatio":"1/1","maxWidth":"220px","margin":"0 auto"}),
-                width=6),
-            ], className="g-0 mt-1"),
-        ], style={"paddingTop":"4px"}),
+                    style={"width":"22%","height":"22vh","flexShrink":"0"}),
+
+                # Cards col 1
+                html.Div([
+                    metric_card("Empuje neto",  "thrust",    "kN",     "good"),
+                    metric_card("Consumo esp.", "tsfc",      "mg/Ns",  ""),
+                    metric_card("Combustible",  "fuel",      "kg/s",   "warn"),
+                ], style={"display":"flex","flexDirection":"column","gap":"3px",
+                          "flex":"1","minWidth":"0"}),
+
+                # Cards col 2
+                html.Div([
+                    metric_card("η motor",       "eta_th",    "%",      ""),
+                    metric_card("η propulsivo",  "eta_prop",  "%",      ""),
+                    metric_card("η motoprop.",   "eta_glob",  "%",      ""),
+                    metric_card("Empuje esp.",   "sp_thrust", "N·s/kg", ""),
+                ], style={"display":"flex","flexDirection":"column","gap":"3px",
+                          "flex":"1","minWidth":"0"}),
+
+            ], style={"display":"flex","flexDirection":"row","width":"100%",
+                      "alignItems":"flex-start","gap":"6px"}),
+
+             # ── Station info — resultado del click ────────────────────────
+            html.Div(id="station-info",
+                     style={"fontFamily":C["mono"],"fontSize":"0.75rem",
+                            "color":C["accent"],"marginTop":"8px",
+                            "padding":"6px 8px",
+                            "background":C["panel2"],
+                            "border":f"1px solid {C['border']}"}),
+
+        ], style={"paddingTop":"4px","display":"flex","flexDirection":"column"}),
 
     ], style={"width":"50%","paddingLeft":"6px","paddingRight":"6px",
               "display":"flex","flexDirection":"column"}),
@@ -1077,15 +1133,6 @@ sim_screen = html.Div([
             html.Div(html.Table(id="tele-table", className="tele-table"),
                      style={"display":"none"}),
         ], style=PANEL_GRAPHS),
-
-        # Panel B2 — telemetría del componente clicado
-        html.Div([
-            html.Div([
-                html.Span("TELEMETRÍA", className="section-head mt-2"),
-                html.Span(id="tele-component-title", className="section-head mt-2"),
-            ], style={"display":"flex", "alignItems":"center", "gap":"6px"}),
-            html.Div(id="comp-tele-panel"),
-        ], style={**PANEL_OUTPUTS_L, "marginTop":"12px"}),
 
         # Botón ACTUACIONES
         html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
@@ -1287,9 +1334,13 @@ def update_labels(*vals):
 
 
 @app.callback(
-    #Output("m-thrust",        "children"),
-   # Output("m-tsfc",          "children"),
-    #Output("m-fuel",          "children"),
+    Output("m-thrust",         "children"),
+    Output("m-tsfc",           "children"),
+    Output("m-sp_thrust",      "children"),
+    Output("m-fuel",           "children"),
+    Output("m-eta_th",         "children"),
+    Output("m-eta_prop",       "children"),
+    Output("m-eta_glob",       "children"),
     Output("graph-ts",           "figure"),
     Output("graph-comp",         "figure"),
     Output("graph-gauge-thrust", "figure"),
@@ -1297,7 +1348,10 @@ def update_labels(*vals):
     Output("tele-table",         "children"),
     Output("alert-tit",       "children"),
     Output("alert-tit",       "style"),
-    Output("engine-diagram",  "children"),
+    Output("onespool-diagram", "figure"),
+    Output("onespool-diagram", "style"),
+    Output("other-diagram",    "children"),
+    Output("other-diagram",    "style"),
     Input("active-engine", "data"),
     Input("eta-override-store",  "data"),
     *[Input(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
@@ -1328,7 +1382,12 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
                        html.Td(msg_str[:80], className="tele-val")])]
         ed = html.Div(msg_str[:120], style={"padding":"8px","fontFamily":C["mono"],
                                              "fontSize":"10px","color":C["accent2"]})
-        return  [ef, ef, ef, ef, et, msg_str, {"display":"block"}, ed]
+        ef_blank = {"data":[],"layout":{"paper_bgcolor":C["panel"],
+                    "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}}
+        return ["—", "—", "—", "—", "—", "—", "—",
+                ef, ef, ef, ef, et, msg_str, {"display":"block"},
+                ef_blank, {"height":"100%","width":"100%","display":"none"},
+                None, {"display":"none"}]
 
     try:
         r = cfg["runner"](p)
@@ -1338,10 +1397,19 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     tit_val = r["Tt4_K"]
 
     # Métricas
+    _V0      = r["V0"]
+    _Vjet    = r["V_jet"]
+    _G       = r["m_core"] + r["m_bypass"]
+    _sp_thrust = (r["thrust_kN"] * 1000) / max(_G, 0.001)   # N·s/kg = N / (kg/s)
+
     metrics = [
         f"{r['thrust_kN']:.2f}",
         f"{r['TSFC_mg']:.3f}",
         f"{r['fuel_kg_s']:.4f}",
+        f"{r['eta_th']:.1f}",
+        f"{r['eta_prop']:.1f}",
+        f"{r['eta_global']:.1f}",
+        f"{_sp_thrust:.1f}",
     ]
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────
@@ -1577,7 +1645,19 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         alert_msg, alert_style = "", {"display":"none"}
 
     # ── Esquema SVG ───────────────────────────────────────────────────────
-    diagram = build_engine_diagram(engine_type, r.get("df"))
+    _diag = build_engine_diagram(engine_type, r.get("df"))
+    _blank = {"data":[],"layout":{"paper_bgcolor":C["panel"],
+              "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}}
+    if engine_type == "OneSpoolEngine":
+        onespool_fig   = _diag.figure
+        onespool_style = {"height":"100%","width":"100%","display":"block"}
+        other_children = None
+        other_style    = {"display":"none"}
+    else:
+        onespool_fig   = _blank
+        onespool_style = {"height":"100%","width":"100%","display":"none"}
+        other_children = _diag
+        other_style    = {"height":"100%","width":"100%","display":"block"}
 
     # ── Indicadores analógicos (Empuje / EPR) ────────────────────────────
     thrust_val = r["thrust_kN"]
@@ -1742,8 +1822,10 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         n_major=4,
     )
 
-    return [fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
-                      table, alert_msg, alert_style, diagram]
+    return [metrics[0], metrics[1], metrics[2], metrics[3], metrics[4], metrics[5], metrics[6],
+            fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
+            table, alert_msg, alert_style,
+            onespool_fig, onespool_style, other_children, other_style]
 
 
 # ── Navegación sim ↔ actuaciones ─────────────────────────────────────────────
@@ -1877,106 +1959,38 @@ col = C["accent"]
  
  
 @app.callback(
-    Output("comp-tele-panel", "children"),
-    Output("tele-component-title",  "children"),
-    Input("onespool-diagram",   "clickData"),
-    State("eta-override-store", "data"),
+    Output("station-info", "children"),
+    Input("diag-OneSpoolEngine", "clickData"),
     prevent_initial_call=True,
 )
-def on_comp_click(clickData, eta_overrides):
-    if clickData is None:
+def on_comp_click(clickData):
+    if not clickData:
         raise dash.exceptions.PreventUpdate
     try:
-        cd = clickData["points"][0].get("customdata", [])
-        if len(cd) < 5:
-            raise dash.exceptions.PreventUpdate
-        zone_id, label, station, t_str, p_str = cd
+        cd = clickData["points"][0]["customdata"]
+        zone_id, label, station, t_str, p_str = cd[0], cd[1], cd[2], cd[3], cd[4]
     except Exception:
         raise dash.exceptions.PreventUpdate
+    return f"ESTACIÓN {station} — {label}  |  T = {t_str}  |  P = {p_str}"
 
-    if eta_overrides is None:
-        eta_overrides = {}
-
-    col = C["accent"]
-    eta_sid, eta_label, extra_key, extra_label = _ETA_MAP.get(
-        zone_id, (None, None, None, None)
+# ── Toggle paneles de rendimiento ────────────────────────────────────────────
+for _eid in ENGINE_CONFIGS:
+    @app.callback(
+        Output(f"eta-panel-{_eid}", "style"),
+        Output(f"btn-eta-toggle-{_eid}", "children"),
+        Input(f"btn-eta-toggle-{_eid}", "n_clicks"),
+        prevent_initial_call=True,
     )
-    eta_default = {
-        "os_edif": 0.99, "os_ec": 0.92, "os_ecc": 0.99,
-        "os_et": 0.88, "os_enoz": 0.99,
-    }
-    current_eta = eta_overrides.get(eta_sid, eta_default.get(eta_sid)) if eta_sid else None
-
-    SUB = {"fontSize":"0.72em","lineHeight":"1"}
-    st_lbl = str(station)
-
-    def row(lbl, val):
-        return html.Tr([
-            html.Td(lbl, className="tele-key"),
-            html.Td(val, className="tele-val"),
-        ])
-
-    rows = [
-        html.Tr([
-            html.Td(["T", html.Sub(f"t{st_lbl}", style=SUB)], className="tele-key"),
-            html.Td(t_str, className="tele-val"),
-        ]),
-        html.Tr([
-            html.Td(["P", html.Sub(f"t{st_lbl}", style=SUB)], className="tele-key"),
-            html.Td(p_str, className="tele-val"),
-        ]),
-    ]
-
-    if eta_sid:
-        rows.append(html.Tr([
-            html.Td(eta_label, className="tele-key"),
-            html.Td(dcc.Input(
-                id={"type": "eta-input", "zone": zone_id},
-                type="number", min=0.60, max=1.00, step=0.01,
-                value=current_eta,
-                placeholder="0.60–1.00",
-                style={
-                    "width": "70px", "fontFamily": C["mono"], "fontSize": "10px",
-                    "background": C["panel2"], "color": C["accent"],
-                    "border": f"1px solid {C['border']}", "padding": "2px 4px",
-                },
-                debounce=True,
-            ), className="tele-val"),
-        ]))
-        rows.append(html.Tr([html.Td(
-            "↵ Intro para aplicar",
-            colSpan=2,
-            style={"fontFamily":C["mono"],"fontSize":"8px",
-                   "color":C["dim"],"fontStyle":"italic","paddingTop":"3px"},
-        )]))
-
-    return [html.Table(rows, className="tele-table w-100"), f"— {label}"]
- 
- 
-@app.callback(
-    Output("eta-override-store", "data"),
-    Input({"type": "eta-input", "zone": dash.ALL}, "value"),
-    State({"type": "eta-input", "zone": dash.ALL}, "id"),
-    State("eta-override-store", "data"),
-    prevent_initial_call=True,
-)
-def update_eta_store(values, ids, current_store):
-    """Cuando el usuario escribe un η en el panel, lo guarda en el Store.
-    run_simulation escucha el Store y relanza el cálculo automáticamente."""
-    if not values or not ids:
-        raise dash.exceptions.PreventUpdate
-    store = dict(current_store or {})
-    for id_dict, val in zip(ids, values):
-        zone_id = id_dict["zone"]
-        eta_sid = _ETA_MAP.get(zone_id, (None,))[0]
-        if eta_sid and val is not None:
-            try:
-                v = float(val)
-                if 0.60 <= v <= 1.00:
-                    store[eta_sid] = v
-            except (TypeError, ValueError):
-                pass
-    return store
-
+    def _toggle_eta(n, eid=_eid):
+        if n % 2 == 1:
+            return ({"display":"block","background":C["panel2"],
+                     "border":f"1px solid {C['border']}",
+                     "paddingTop":"5px","paddingLeft":"10px",
+                     "paddingRight":"10px","marginTop":"4px"}, "▴")
+        return ({"display":"none","background":C["panel2"],
+                 "border":f"1px solid {C['border']}",
+                 "paddingTop":"5px","paddingLeft":"10px",
+                 "paddingRight":"10px","marginTop":"4px"}, "▾")
+    
 if __name__ == "__main__":
     app.run(debug=True)

@@ -131,11 +131,15 @@ def _perf(V_jet, V0, m_dot, FAR, opr,
     F_total  = F_core + F_bypass
 
     fuel_kg_s = m_dot * FAR
-    SFC       = fuel_kg_s / max(abs(F_total), 1.0) * 3600
+    SFC       = fuel_kg_s / (F_total/1000)
     TSFC_mg   = SFC * 1e6 / 9.81
 
-    eta_th    = max(0.0, 1 - 1 / max(opr, 1.001) ** ((GAMMA - 1) / GAMMA))
-    eta_prop  = (2 * V0 / (V_jet + V0 + 1e-6)) if V0 > 0 else 0.0
+    eta_th    = 0.5*m_dot*(V_jet**2-V0**2)/(fuel_kg_s*42*10**6)
+    if V0 == 0:
+        eta_prop = 0
+    else:
+        eta_prop  = 2/(1+V_jet/V0)
+    
     eta_global = eta_th * eta_prop
 
     return {

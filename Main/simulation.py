@@ -86,28 +86,40 @@ class CombustionChamber(Component):
         return tit, p_out
 
 class Turbine(Component):
-    def calculate(self, t_in, p_in, required_work):
+    def calculate(self, t_in, p_in, required_work, G):
         t_out = t_in - (required_work / self.cp)
         p_out = p_in * (1 - (1/self.eta)*(1-t_out/t_in) ** (self.gamma / (self.gamma - 1)))
-        return t_out, p_out
+        
+        g = self.gamma
+        exp = (g + 1) / (2 * (g - 1))
+        A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) * ((g + 1) / 2)**exp
+
+        return t_out, p_out, A
 class Postcombustor(Component):
     def calculate(self, t_in, p_in):
         return t_in, p_in
 
 
 class Nozzle(Component):
-    def calculate(self, t_in, p_in, t_a, p_a, conf='CON'):
+    def calculate(self, t_in, p_in, t_a, p_a, G, conf='CON'):
         if conf == 'CON':
             param_pressure = p_in / p_a
             param_gamma    = ((self.gamma + 1) / 2) ** (self.gamma / (self.gamma - 1))
+            g = self.gamma
             if param_pressure <= param_gamma:       # adaptada
                 p_out = p_a
                 t_out = t_in * (1 / param_pressure) ** ((self.gamma - 1) / self.gamma)
                 mach  = math.sqrt((2 / (self.gamma - 1)) * (param_pressure ** ((self.gamma - 1) / self.gamma) - 1))
+
+                f_M = mach * (1 + (g - 1) / 2 * mach**2)**(-(g + 1) / (2 * (g - 1)))
+                A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) / f_M
             else:                                   # bloqueada
                 p_out = p_in / param_gamma
                 t_out = t_in / ((self.gamma + 1) / 2)
                 mach  = 1.0
+                
+                exp = (g + 1) / (2 * (g - 1))
+                A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) * ((g + 1) / 2)**exp
         else:   # CON-DIV adaptada
             param_pressure = p_in / p_a
             p_out = p_a
@@ -115,14 +127,14 @@ class Nozzle(Component):
             mach  = math.sqrt((2 / (self.gamma - 1)) * (param_pressure ** ((self.gamma - 1) / self.gamma) - 1))
 
         v_out = mach * math.sqrt(self.gamma * self.R * t_out)
-        return t_out, p_out, v_out
+        return t_out, p_out, v_out, A
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  HELPER INTERNO: métricas de actuaciones
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _perf(V_jet, V0, m_dot, FAR, opr,
+def _perf(V_jet, V0, m_dot, FAR, opr, A_8,
           V_bypass=0.0, m_bypass=0.0, shaft_W=0.0,
           Tt0=0.0, Tt3=0.0, Tt4=0.0, Tt5=0.0,
           Pt0_kPa=0.0, Pt3_kPa=0.0, P0_kPa=0.0):
@@ -187,10 +199,10 @@ class OneSpoolEngine:
     """Turbojet monoeje: Difusor → Compresor → Cámara → Turbina → Tobera."""
 
     def __init__(self):
-        self.dif  = Difussor(eta=1)
-        self.comp = Compressor(eta=0.8)
-        self.cc   = CombustionChamber(eta=1)
-        self.turb = Turbine(eta=1)
+        self.dif  = Difussor()
+        self.comp = Compressor()
+        self.cc   = CombustionChamber()
+        self.turb = Turbine()
         self.pc   = Postcombustor()
         self.nozz = Nozzle()
 
@@ -218,9 +230,9 @@ class OneSpoolEngine:
         T_2t, P_2t         = self.dif.calculate(T_amb, P_amb, mach)
         T_3t, P_3t, W_c    = self.comp.calculate(T_2t, P_2t, pi_23)
         T_4t, P_4t         = self.cc.calculate(T_3t, P_3t, tit)
-        T_5t, P_5t         = self.turb.calculate(T_4t, P_4t, W_c)
+        T_5t, P_5t, A_4         = self.turb.calculate(T_4t, P_4t, W_c, G)
         T_7t, P_7t         = self.pc.calculate(T_5t, P_5t)
-        T_9, P_9, V_jet    = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb)
+        T_9, P_9, V_jet, A_8    = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb, G)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,2.5,3,4,4.5,5,6,7,8,9], columns=['T','P']),
@@ -229,7 +241,7 @@ class OneSpoolEngine:
         )
 
         FAR = CP * (T_4t - T_3t) / (LHV * self.cc.eta)
-        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=pi_23,
+        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=pi_23, A_8=A_8,
                   Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_amb/1000)
         r["df"]          = df
@@ -243,11 +255,11 @@ class TwinSpoolEngine:
 
     def __init__(self):
         self.dif           = Difussor()
-        self.lp_compressor = Compressor(eta=1)
-        self.hp_compressor = Compressor(eta=1)
+        self.lp_compressor = Compressor()
+        self.hp_compressor = Compressor()
         self.cc            = CombustionChamber()
-        self.hp_turbine    = Turbine(eta=1)
-        self.lp_turbine    = Turbine(eta=1)
+        self.hp_turbine    = Turbine()
+        self.lp_turbine    = Turbine()
         self.pc            = Postcombustor()
         self.nozz          = Nozzle()
 
@@ -268,10 +280,10 @@ class TwinSpoolEngine:
         T_25t, P_25t, W_lpc   = self.lp_compressor.calculate(T_2t,  P_2t,  pi_lpc)
         T_3t,  P_3t,  W_hpc   = self.hp_compressor.calculate(T_25t, P_25t, pi_hpc)
         T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
-        T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_hpc)
-        T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_lpc)
+        T_45t, P_45t, A_4      = self.hp_turbine.calculate(T_4t,  P_4t,  W_hpc)
+        T_5t,  P_5t, A_45      = self.lp_turbine.calculate(T_45t, P_45t, W_lpc)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
-        T_9,   P_9,   V_jet   = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb)
+        T_9,   P_9,   V_jet, A_8   = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb, G)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,2.5,3,4,4.5,5,6,7,8,9], columns=['T','P']),
@@ -281,7 +293,7 @@ class TwinSpoolEngine:
 
         FAR = CP * (T_4t - T_3t) / (LHV * self.cc.eta)
         opr = pi_lpc * pi_hpc
-        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=opr,
+        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=opr, A_8=A_8,
                   Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_amb/1000)
         r["df"]          = df
@@ -296,11 +308,11 @@ class SingleFlowTurbofan:
 
     def __init__(self):
         self.dif        = Difussor()
-        self.fan        = Compressor(eta=1.0)
-        self.comp       = Compressor(eta=1.0)
+        self.fan        = Compressor()
+        self.comp       = Compressor()
         self.cc         = CombustionChamber()
-        self.hp_turbine = Turbine(eta=1.0)
-        self.lp_turbine = Turbine(eta=1.0)
+        self.hp_turbine = Turbine()
+        self.lp_turbine = Turbine()
         self.pc         = Postcombustor()
         self.nozz       = Nozzle()
 
@@ -321,10 +333,10 @@ class SingleFlowTurbofan:
         T_3t,  P_3t,  W_c     = self.comp.calculate(T_2t, P_2t, pi_23)
         T_13t, P_13t, W_fan   = self.fan.calculate(T_2t,  P_2t, pi_fan)
         T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
-        T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_c)
-        T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_fan * bpr)
+        T_45t, P_45t, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  W_c, G)
+        T_5t,  P_5t, A_45     = self.lp_turbine.calculate(T_45t, P_45t, W_fan * bpr, G)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
-        T_9,   P_9,   V_jet   = self.nozz.calculate(T_7t,  P_7t,  T_amb, P_amb)
+        T_9,   P_9,   V_jet, A_8   = self.nozz.calculate(T_7t,  P_7t,  T_amb, P_amb, G)
         _,     _,     V_bypass = self.nozz.calculate(T_13t, P_13t, T_amb, P_amb)
 
         df = _fill_df(
@@ -339,7 +351,7 @@ class SingleFlowTurbofan:
         FAR      = CP * (T_4t - T_3t) / LHV
         opr      = pi_fan * pi_23
 
-        r = _perf(V_jet=V_jet, V0=V0, m_dot=m_core, FAR=FAR, opr=opr,
+        r = _perf(V_jet=V_jet, V0=V0, m_dot=m_core, FAR=FAR, opr=opr, A_8=A_8,
                   V_bypass=V_bypass, m_bypass=m_bypass,
                   Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_amb/1000)
@@ -356,10 +368,10 @@ class OneSpoolTurboprop:
 
     def __init__(self):
         self.dif        = Difussor()
-        self.comp       = Compressor(eta=0.8)
+        self.comp       = Compressor()
         self.cc         = CombustionChamber()
-        self.hp_turbine = Turbine(eta=1.0)
-        self.lp_turbine = Turbine(eta=1.0)
+        self.hp_turbine = Turbine()
+        self.lp_turbine = Turbine()
         self.pc         = Postcombustor()
         self.nozz       = Nozzle()
 
@@ -382,10 +394,10 @@ class OneSpoolTurboprop:
         T_2t,  P_2t           = self.dif.calculate(T_amb, P_amb, mach)
         T_3t,  P_3t,  W_c     = self.comp.calculate(T_2t, P_2t, pi_23)
         T_4t,  P_4t           = self.cc.calculate(T_3t, P_3t, tit)
-        T_45t, P_45t          = self.hp_turbine.calculate(T_4t,  P_4t,  W_c)
-        T_5t,  P_5t           = self.lp_turbine.calculate(T_45t, P_45t, W_h * eta_m)
+        T_45t, P_45t, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  W_c, G)
+        T_5t,  P_5t, A_45     = self.lp_turbine.calculate(T_45t, P_45t, W_h * eta_m, G)
         T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
-        T_9,   P_9,   V_jet   = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb)
+        T_9,   P_9,   V_jet, A_8   = self.nozz.calculate(T_7t, P_7t, T_amb, P_amb, G)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,3,4,4.5,5,6,7,8,9], columns=['T','P']),

@@ -1427,24 +1427,25 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         """Incremento de entropía entre dos estados [kJ/kg·K]."""
         return _cp * np.log(max(T2,1)/max(T1,1)) - _R * np.log(max(P2,0.001)/max(P1,0.001))
 
-    df_st = r.get("df")
+    dict_st= r.get("stations")
 
     # Recoge T y P de cada estación desde el DataFrame de simulación
     def _st(station):
         try:
-            T = float(df_st.loc[station, "T"])
-            P = float(df_st.loc[station, "P"]) / 1000   # Pa → kPa
-            return T, P
+            T = float(dict_st[station]["T"])
+            P = float(dict_st[station]["P"])/1000 # Pa → kPa
+            S = float(dict_st[station]["S"]) 
+            return T, P, S
         except Exception:
-            return None, None
+            return None, None, None
 
-    T0s,  P0s  = r["T0_K"],  r["P0_kPa"]    # estática entrada (0)
-    T0t,  P0t  = _st(0)                       # estación 0 en df = 2t (difusor entrada)
-    T2t,  P2t  = _st(2)                       # salida difusor
-    T3t,  P3t  = _st(3)                       # salida compresor
-    T4t,  P4t  = _st(4)                       # salida cámara (TIT)
-    T5t,  P5t  = _st(5)                       # salida turbina
-    T9,   P9   = _st(9)                       # salida tobera (estática)
+    T0s,  P0s, S0s  = r["T0_K"],  r["P0_kPa"], 0   # estática entrada (0)
+    T0t,  P0t, S0t   = _st(0)                       # estación 0 en df = 2t (difusor entrada)
+    T2t,  P2t, S2t  = _st(2)                       # salida difusor
+    T3t,  P3t, S3t  = _st(3)                       # salida compresor
+    T4t,  P4t, S4t  = _st(4)                       # salida cámara (TIT)
+    T5t,  P5t, S5t  = _st(5)                       # salida turbina
+    T9,   P9, S9    = _st(9)                       # salida tobera (estática)
 
     # Fallback si alguna estación no está en el df
     if T2t  is None: T2t,  P2t  = r["T0_K"],   r["Pt0_kPa"]
@@ -1453,17 +1454,17 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     if T5t  is None: T5t,  P5t  = r["Tt5_K"],  r["Pt3_kPa"]
     if T9   is None: T9,   P9   = r["Tt5_K"],  r["P0_kPa"]
 
-    # Entropía acumulada [kJ/kg·K] — s=0 en el estado estático de entrada
-    s0s  = 0.0
-    s0t  = s0s + _ds(T0s, P0s, T2t, P2t)      # ram: compresión isentrópica ideal
-    s2t  = s0t + _ds(T2t, P2t, T2t, P2t)      # difusor (mismo punto, sin irreversibilidad adicional)
-    s3t  = s2t + _ds(T2t, P2t, T3t, P3t)      # compresor (irreversible → s aumenta)
-    s4t  = s3t + _ds(T3t, P3t, T4t, P4t)      # cámara combustión (isobara → s sube por calor)
-    s5t  = s4t + _ds(T4t, P4t, T5t, P5t)      # turbina (irreversible → s aumenta un poco)
-    s9   = s5t + _ds(T5t, P5t, T9,  P9)       # expansión en tobera
+    # # Entropía acumulada [kJ/kg·K] — s=0 en el estado estático de entrada
+    # s0s  = 0.0
+    # s0t  = s0s + _ds(T0s, P0s, T2t, P2t)      # ram: compresión isentrópica ideal
+    # s2t  = s0t + _ds(T2t, P2t, T2t, P2t)      # difusor (mismo punto, sin irreversibilidad adicional)
+    # s3t  = s2t + _ds(T2t, P2t, T3t, P3t)      # compresor (irreversible → s aumenta)
+    # s4t  = s3t + _ds(T3t, P3t, T4t, P4t)      # cámara combustión (isobara → s sube por calor)
+    # s5t  = s4t + _ds(T4t, P4t, T5t, P5t)      # turbina (irreversible → s aumenta un poco)
+    # s9   = s5t + _ds(T5t, P5t, T9,  P9)       # expansión en tobera
 
     # Puntos del ciclo (cierra en 0s)
-    ss = [s0s,  s0t,  s3t,  s4t,  s5t,  s9,   s0s]
+    ss = [S0s,  S2t,  S3t,  S4t,  S5t,  S9,   S0s]
     Ts = [T0s,  T2t,  T3t,  T4t,  T5t,  T9,   T0s]
     labels = ["[0] Entrada", "[2t] Difusor", "[3t] Compresor",
               "[4t] TIT", "[5t] Turbina", "[9] Tobera", ""]

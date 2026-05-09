@@ -186,7 +186,7 @@ ENGINE_CONFIGS = {
         "color":    "#1a4d8f",
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
-            ("os_t0",   "T\u2080 [°C]",   -70,  50,    15,   1),
+            ("os_t0",   "T\u2080 [K]",    200,  325,   288,   1),
             ("os_p0",   "P\u2080 [kPa]",   20,  105,  101.325, 0.1),
             ("os_mach", "M\u2080",           0,  2.5,    0,   0.01),
         ],
@@ -206,13 +206,13 @@ ENGINE_CONFIGS = {
         ],
         "engine_cls": sim.OneSpoolEngine,
         "runner": lambda p: sim.OneSpoolEngine().simulate(
-            p["os_t0"] + 273.15, p["os_p0"] * 1000,
+            p["os_t0"], p["os_p0"] * 1000,
             p["os_mach"], p["os_G"], p["os_pi"], p["os_tit"],
             eta_dif=p["os_edif"], eta_c=p["os_ec"], eta_cc=p["os_ecc"],
             eta_t=p["os_et"], eta_noz=p["os_enoz"],
         ),
         "sweep_base": lambda p: {
-            "T_amb": p["os_t0"] + 273.15, "P_amb": p["os_p0"] * 1000,
+            "T_amb": p["os_t0"], "P_amb": p["os_p0"] * 1000,
             "mach":p["os_mach"], "G":p["os_G"],
             "pi_23":p["os_pi"],  "tit":p["os_tit"],
             "eta_dif":p["os_edif"], "eta_c":p["os_ec"], "eta_cc":p["os_ecc"],
@@ -224,7 +224,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turbojet + Postcombustor",
         "color":    "#b83232",
         "sliders_vuelo": [
-            ("ts_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
+            ("ts_t0",   "T\u2080 [K]",    200,  325,   288,   1),
             ("ts_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
             ("ts_mach", "M\u2080",          0,  2.5,   0,  0.01),
         ],
@@ -246,7 +246,7 @@ ENGINE_CONFIGS = {
         ],
         "engine_cls": sim.TwinSpoolEngine,
         "runner": lambda p: sim.TwinSpoolEngine().simulate(
-            p["ts_t0"] + 273.15, p["ts_p0"] * 1000,
+            p["ts_t0"], p["ts_p0"] * 1000,
             p["ts_mach"], p["ts_G"],
             p["ts_pilpc"], p["ts_pihpc"], p["ts_tit"],
             eta_dif=p["ts_edif"], eta_lpc=p["ts_elpc"], eta_hpc=p["ts_ehpc"],
@@ -254,7 +254,7 @@ ENGINE_CONFIGS = {
             eta_noz=p["ts_enoz"],
         ),
         "sweep_base": lambda p: {
-            "T_amb": p["ts_t0"] + 273.15, "P_amb": p["ts_p0"] * 1000,
+            "T_amb": p["ts_t0"], "P_amb": p["ts_p0"] * 1000,
             "mach":p["ts_mach"],    "G":p["ts_G"],
             "pi_lpc":p["ts_pilpc"], "pi_hpc":p["ts_pihpc"], "tit":p["ts_tit"],
             "eta_dif":p["ts_edif"], "eta_lpc":p["ts_elpc"], "eta_hpc":p["ts_ehpc"],
@@ -267,7 +267,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Flow Turbofan",
         "color":    "#1a6644",
         "sliders_vuelo": [
-            ("tf_t0",   "T\u2080 [°C]",  -70,  50,   15,   1),
+            ("tf_t0",   "T\u2080 [K]",    200,  325,   288,   1),
             ("tf_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
             ("tf_mach", "M\u2080",          0,  1.0,   0,  0.01),
         ],
@@ -290,7 +290,7 @@ ENGINE_CONFIGS = {
         ],
         "engine_cls": sim.SingleFlowTurbofan,
         "runner": lambda p: sim.SingleFlowTurbofan().simulate(
-            p["tf_t0"] + 273.15, p["tf_p0"] * 1000,
+            p["tf_t0"], p["tf_p0"] * 1000,
             p["tf_mach"], p["tf_G"], p["tf_pi"], p["tf_tit"],
             p["tf_pifan"], p["tf_bpr"],
             eta_dif=p["tf_edif"], eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
@@ -299,7 +299,7 @@ ENGINE_CONFIGS = {
             eta_noz=p["tf_enoz"],
         ),
         "sweep_base": lambda p: {
-            "T_amb": p["tf_t0"] + 273.15, "P_amb": p["tf_p0"] * 1000,
+            "T_amb": p["tf_t0"], "P_amb": p["tf_p0"] * 1000,
             "mach":p["tf_mach"],    "G":p["tf_G"],
             "pi_23":p["tf_pi"],     "tit":p["tf_tit"],
             "pi_fan":p["tf_pifan"], "bpr":p["tf_bpr"],
@@ -314,7 +314,7 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turboprop",
         "color":    "#9c4d00",
         "sliders_vuelo": [
-            ("tp_t0",   "T\u2080 [°C]",  -50,  50,  15,   1),
+            ("tp_t0",   "T\u2080 [K]",    200,  325,   288,   1),
             ("tp_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
             ("tp_mach", "M\u2080",          0,  0.7,  0,  0.01),
         ],
@@ -336,7 +336,7 @@ ENGINE_CONFIGS = {
         ],
         "engine_cls": sim.OneSpoolTurboprop,
         "runner": lambda p: sim.OneSpoolTurboprop().simulate(
-            p["tp_t0"] + 273.15, p["tp_p0"] * 1000,
+            p["tp_t0"], p["tp_p0"] * 1000,
             p["tp_mach"], p["tp_G"], p["tp_pi"], p["tp_tit"],
             p["tp_Wh"] * 1000, p["tp_etam"],
             eta_dif=p["tp_edif"], eta_c=p["tp_ec"], eta_cc=p["tp_ecc"],
@@ -344,7 +344,7 @@ ENGINE_CONFIGS = {
             eta_noz=p["tp_enoz"],
         ),
         "sweep_base": lambda p: {
-            "T_amb": p["tp_t0"] + 273.15, "P_amb": p["tp_p0"] * 1000,
+            "T_amb": p["tp_t0"], "P_amb": p["tp_p0"] * 1000,
             "mach":p["tp_mach"],  "G":p["tp_G"],
             "pi_23":p["tp_pi"],   "tit":p["tp_tit"],
             "W_h":p["tp_Wh"]*1000, "eta_m":p["tp_etam"],
@@ -1206,15 +1206,17 @@ sim_screen = html.Div([
 
                 # Reloj Empuje
                 html.Div(
-                    dcc.Graph(id="graph-gauge-thrust", config={"displayModeBar":False},
-                              style={"height":"100%","width":"100%"}),
-                    style={"width":"22%","height":"22vh","flexShrink":"0"}),
+                    dcc.Graph(id="graph-gauge-thrust",
+                            config={"displayModeBar":False, "responsive":True},
+                            style={"height":"100%","width":"100%"}),
+                    style={"width":"22vh","height":"22vh","flexShrink":"0"}),
 
                 # Reloj EPR
                 html.Div(
-                    dcc.Graph(id="graph-gauge-epr", config={"displayModeBar":False},
-                              style={"height":"100%","width":"100%"}),
-                    style={"width":"22%","height":"22vh","flexShrink":"0"}),
+                    dcc.Graph(id="graph-gauge-epr",
+                            config={"displayModeBar":False, "responsive":True},
+                            style={"height":"100%","width":"100%"}),
+                    style={"width":"22vh","height":"22vh","flexShrink":"0"}),
 
                 # Cards col 1
                 html.Div([
@@ -1910,7 +1912,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             lbl = (f"{v:.1f}" if (vmax - vmin) < 5
                    else f"{int(round(v))}")
             annotations.append(dict(x=xl, y=yl, text=lbl, showarrow=False,
-                                    font=dict(size=8, family=C["mono"],
+                                    font=dict(size=10, family=C["mono"],
                                               color=C["dim"])))
 
         # ── Aguja ─────────────────────────────────────────────────────
@@ -1939,14 +1941,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             x=CX, y=CY - 0.19,
             text=f"{value:.1f}{suffix}",
             showarrow=False,
-            font=dict(size=15, family=C["mono"], color=C["accent"])))
-
-        # ── Título ────────────────────────────────────────────────────
-        annotations.append(dict(
-            x=CX, y=0.05,
-            text=title,
-            showarrow=False,
-            font=dict(size=9, family=C["head"], color=C["dim"])))
+            font=dict(size=13, family=C["mono"], color=C["accent"])))
 
         # ── Figura final ──────────────────────────────────────────────
         fig = go.Figure(data=traces)
@@ -1960,9 +1955,10 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             yaxis=dict(range=[0, 1], showgrid=False, zeroline=False,
                        showticklabels=False, fixedrange=True,
                        scaleanchor="x", scaleratio=1),
-            margin=dict(l=2, r=2, t=2, b=2),
+            margin=dict(l=0, r=0, t=0, b=0),
             showlegend=False,
             dragmode=False,
+            autosize=True,
         )
         return fig
 

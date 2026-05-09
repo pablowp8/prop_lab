@@ -58,23 +58,23 @@ TLM_WINDOW_S    = 60       # ventana visible (s)
 TLM_MAX_HISTORY = 4000     # nº máximo de muestras guardadas por variable
 
 PARAM_META = {
-    'thrust_kN':   {'label': 'F total',      'unit': 'kN',        'color': '#185FA5', 'dec': 2},
-    'F_helice_kN': {'label': 'F hélice',     'unit': 'kN',        'color': '#1D9E75', 'dec': 2},
-    'F_resid_kN':  {'label': 'F residual',   'unit': 'kN',        'color': '#7F77DD', 'dec': 2},
-    'SFC':         {'label': 'SFC',          'unit': 'kg/(N·h)',  'color': '#D4537E', 'dec': 4},
-    'TSFC_mg':     {'label': 'TSFC',         'unit': 'mg/(N·s)',  'color': '#993556', 'dec': 2},
-    'eta_th':      {'label': 'η térmico',    'unit': '%',         'color': '#BA7517', 'dec': 1},
-    'eta_prop':    {'label': 'η propulsivo', 'unit': '%',         'color': '#534AB7', 'dec': 1},
-    'eta_global':  {'label': 'η global',     'unit': '%',         'color': '#5F5E5A', 'dec': 1},
-    'fuel_kg_s':   {'label': 'Combustible',  'unit': 'kg/s',      'color': '#D85A30', 'dec': 4},
-    'FAR':         {'label': 'FAR',          'unit': '–',         'color': '#444441', 'dec': 4},
-    'V_jet':       {'label': 'V jet',        'unit': 'm/s',       'color': '#378ADD', 'dec': 1},
-    'V_bypass':    {'label': 'V bypass',     'unit': 'm/s',       'color': '#0F6E56', 'dec': 1},
-    'V0':          {'label': 'V0',           'unit': 'm/s',       'color': '#888780', 'dec': 1},
-    'm_core':      {'label': 'ṁ core',       'unit': 'kg/s',      'color': '#639922', 'dec': 2},
-    'm_bypass':    {'label': 'ṁ bypass',     'unit': 'kg/s',      'color': '#97C459', 'dec': 2},
-    'shaft_MW':    {'label': 'P eje',        'unit': 'MW',        'color': '#E24B4A', 'dec': 2},
-    'EGT':         {'label': 'EGT',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    # 'thrust_kN':   {'label': 'F total',      'unit': 'kN',        'color': '#185FA5', 'dec': 2},
+    # 'F_helice_kN': {'label': 'F hélice',     'unit': 'kN',        'color': '#1D9E75', 'dec': 2},
+    # 'F_resid_kN':  {'label': 'F residual',   'unit': 'kN',        'color': '#7F77DD', 'dec': 2},
+    # 'SFC':         {'label': 'SFC',          'unit': 'kg/(N·h)',  'color': '#D4537E', 'dec': 4},
+    # 'TSFC_mg':     {'label': 'TSFC',         'unit': 'mg/(N·s)',  'color': '#993556', 'dec': 2},
+    # 'eta_th':      {'label': 'η térmico',    'unit': '%',         'color': '#BA7517', 'dec': 1},
+    # 'eta_prop':    {'label': 'η propulsivo', 'unit': '%',         'color': '#534AB7', 'dec': 1},
+    # 'eta_global':  {'label': 'η global',     'unit': '%',         'color': '#5F5E5A', 'dec': 1},
+    # 'fuel_kg_s':   {'label': 'Combustible',  'unit': 'kg/s',      'color': '#D85A30', 'dec': 4},
+    # 'FAR':         {'label': 'FAR',          'unit': '–',         'color': '#444441', 'dec': 4},
+    # 'V_jet':       {'label': 'V jet',        'unit': 'm/s',       'color': '#378ADD', 'dec': 1},
+    # 'V_bypass':    {'label': 'V bypass',     'unit': 'm/s',       'color': '#0F6E56', 'dec': 1},
+    # 'V0':          {'label': 'V0',           'unit': 'm/s',       'color': '#888780', 'dec': 1},
+    # 'm_core':      {'label': 'ṁ core',       'unit': 'kg/s',      'color': '#639922', 'dec': 2},
+    # 'm_bypass':    {'label': 'ṁ bypass',     'unit': 'kg/s',      'color': '#97C459', 'dec': 2},
+    # 'shaft_MW':    {'label': 'P eje',        'unit': 'MW',        'color': '#E24B4A', 'dec': 2},
+    # 'EGT':         {'label': 'EGT',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
     'T0_K':        {'label': 'T0',           'unit': 'K',         'color': '#5DCAA5', 'dec': 1},
     'Tt3_K':       {'label': 'T3t',          'unit': 'K',         'color': '#D85A30', 'dec': 1},
     'Tt4_K':       {'label': 'T4t',          'unit': 'K',         'color': '#7F77DD', 'dec': 0},
@@ -82,8 +82,8 @@ PARAM_META = {
     'Pt0_kPa':     {'label': 'P0t',          'unit': 'kPa',       'color': '#534AB7', 'dec': 2},
     'Pt3_kPa':     {'label': 'P3t',          'unit': 'kPa',       'color': '#993556', 'dec': 2},
     'P0_kPa':      {'label': 'P0',           'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
-    'opr':         {'label': 'OPR (π23)',    'unit': '–',         'color': '#534AB7', 'dec': 2},
-    'tit_limit':   {'label': 'TIT límite',   'unit': 'K',         'color': '#888780', 'dec': 0},
+    # 'opr':         {'label': 'OPR (π23)',    'unit': '–',         'color': '#534AB7', 'dec': 2},
+    # 'tit_limit':   {'label': 'TIT límite',   'unit': 'K',         'color': '#888780', 'dec': 0},
 }
 
 # Estado interno del histórico
@@ -1256,25 +1256,40 @@ sim_screen = html.Div([
 
         # Selector de gráfica
         html.Div([
-            html.Div("Gráficas", className="section-head mt-2"),
-            html.Div(dcc.Graph(id="graph-ts",
-                                config={"displayModeBar":False, "responsive":True},
-                                style={"height":"100%"}),
-                                id="wrap-ts", className="graph-card mb-1",
-                                style={"flex":"1 1 0", "minHeight":0}),
+            # html.Div("Gráficas", className="section-head mt-2"),
+            html.Div([
+                html.Span("CICLO T-S",
+                            style={"fontSize": "12px",
+                                    "letterSpacing": "0.08em",
+                                    "fontFamily": C["mono"],
+                                    "color": C["dim"], 
+                                    "padding": "12px 4px 0px 8px"}),
+                dcc.Graph(id="graph-ts",
+                            config={"displayModeBar":False, "responsive":True},
+                            style={"flex":"1 1 0", "minHeight":0})
+                    ],  id="wrap-ts", className="graph-card mb-1",
+                        style={"flex":"1 1 0", "minHeight":0,
+                      "display":"flex", "flexDirection":"column", "marginTop":"4px"}),
             # ── Panel de telemetría en vivo ──────────────────────────────────────────────────────────
             html.Div([
                 # Cabecera: indicador EN VIVO + desplegable de variables
                 html.Div([
                     html.Span([
-                        html.Span("●", id="tlm-live-dot",
-                                  style={"color": C["accent3"], "fontSize": "12px",
-                                         "marginRight": "6px"}),
-                        html.Span("EN VIVO",
-                                  style={"fontSize": "9px",
+                        html.Span("Telemetría",
+                                  style={"fontSize": "12px",
                                          "letterSpacing": "0.08em",
                                          "fontFamily": C["mono"],
                                          "color": C["dim"]}),
+                        html.Span("●", id="tlm-live-dot",
+                                  style={"color": C["accent3"], "fontSize": "12px",
+                                         "marginLeft": "32px",
+                                         "marginRight": "6px"}),
+                        html.Span("EN VIVO",
+                                  style={"fontSize": "12px",
+                                         "letterSpacing": "0.08em",
+                                         "fontFamily": C["mono"],
+                                         "color": C["dim"]}),
+                        
                     ]),
                     html.Details([
                         html.Summary(
@@ -1294,8 +1309,8 @@ sim_screen = html.Div([
                         html.Div(
                             dcc.Checklist(
                                 id="tlm-checklist",
-                                options=[{"label": k, "value": k} for k in PARAM_META],
-                                value=["Tt3_K", "opr"],
+                                options=[{"label": v["label"], "value": k} for k, v in PARAM_META.items()],
+                                value=["Tt3_K"],
                                 # Truco clave: row-reverse + space-between
                                 # → texto a la izquierda, recuadro a la derecha
                                 labelStyle={
@@ -1329,7 +1344,7 @@ sim_screen = html.Div([
                 ], style={"display": "flex",
                           "alignItems": "center",
                           "justifyContent": "space-between",
-                          "padding": "4px 8px 0 8px"}),
+                          "padding": "4px 8px 0px 8px"}),
                 dcc.Graph(id="graph-tlm",
                           config={"displayModeBar":False, "responsive":True},
                           style={"flex":"1 1 0", "minHeight":0}),
@@ -1520,16 +1535,23 @@ def update_telemetry(_n, selected, data):
     selected = selected or []
     if not data:
         # Aún no se ha calculado nada: figura vacía pero estilada
-        fig = go.Figure().update_layout(**_plot_layout("Telemetría"))
+        fig = go.Figure().update_layout(**_plot_layout(""))
         fig.update_xaxes(**_ax("t [s]"), range=[-60, 0])
-        fig.update_yaxes(**_ax())
+        fig.update_yaxes(**_ax(), range=[0, 1800])
         return fig, f"Variables ({len(selected)}) ▾"
 
     fig = update_telemetry_figure(data, selected, window_s=60)
+
+    # Máximo global de las trazas visibles → techo del eje Y al 110 %
+    ymax = 1.0
+    for trace in fig.data:
+        if trace.y:
+            ymax = max(ymax, max(v for v in trace.y if v is not None))
+
     # Sobreescribir layout para casar con la paleta del laboratorio
-    fig.update_layout(**_plot_layout("Telemetría"))
+    fig.update_layout(**_plot_layout(""))
     fig.update_xaxes(**_ax("t [s]"), range=[-60, 0])
-    fig.update_yaxes(**_ax(), autorange=True)
+    fig.update_yaxes(**_ax(), range=[0, ymax * 1.1], autorange=False)
     # Conservar la leyenda interna ya construida por la función
     fig.update_layout(showlegend=True,
                       legend=dict(orientation="h",
@@ -1731,7 +1753,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             bgcolor=C["panel"], bordercolor=C["border"],
             borderwidth=1, borderpad=3,
         )
-    fig_ts.update_layout(**_plot_layout("Diagrama T-s  [kJ/kg·K]"))
+    fig_ts.update_layout(**_plot_layout(""))
     fig_ts.update_xaxes(**_ax("Entropía relativa  s  [kJ/kg·K]"))
     fig_ts.update_yaxes(**_ax("Temperatura  T  [K]"))
 

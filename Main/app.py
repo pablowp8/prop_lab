@@ -8,6 +8,9 @@ Ejecución:  python app.py
 Producción: gunicorn app:server --workers 4 --threads 4 --bind 0.0.0.0:8050
 """
 
+import time
+from collections import deque
+
 import numpy as np
 import dash
 from dash import dcc, html, Input, Output, State, ctx
@@ -40,6 +43,138 @@ C = {
     "mono":    "Share Tech Mono, monospace",
     "head":    "Barlow Condensed, sans-serif",
 }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  TELEMETRÍA EN VIVO  (antes telemetry_figure.py — inlineado aquí)
+# ══════════════════════════════════════════════════════════════════════════════
+# update_telemetry_figure(data, selected) construye la traza temporal:
+#   - data     : dict con la r del motor (Tt3_K, opr, ...). Ignora lo no numérico.
+#   - selected : lista de claves a pintar.
+#   - El eje Y autoescala al rango global (= se adapta a la variable más grande).
+#   - El historial se guarda a nivel de módulo: cada llamada añade una muestra.
+
+TLM_WINDOW_S    = 60       # ventana visible (s)
+TLM_MAX_HISTORY = 4000     # nº máximo de muestras guardadas por variable
+
+PARAM_META = {
+    'thrust_kN':   {'label': 'F total',      'unit': 'kN',        'color': '#185FA5', 'dec': 2},
+    'F_helice_kN': {'label': 'F hélice',     'unit': 'kN',        'color': '#1D9E75', 'dec': 2},
+    'F_resid_kN':  {'label': 'F residual',   'unit': 'kN',        'color': '#7F77DD', 'dec': 2},
+    'SFC':         {'label': 'SFC',          'unit': 'kg/(N·h)',  'color': '#D4537E', 'dec': 4},
+    'TSFC_mg':     {'label': 'TSFC',         'unit': 'mg/(N·s)',  'color': '#993556', 'dec': 2},
+    'eta_th':      {'label': 'η térmico',    'unit': '%',         'color': '#BA7517', 'dec': 1},
+    'eta_prop':    {'label': 'η propulsivo', 'unit': '%',         'color': '#534AB7', 'dec': 1},
+    'eta_global':  {'label': 'η global',     'unit': '%',         'color': '#5F5E5A', 'dec': 1},
+    'fuel_kg_s':   {'label': 'Combustible',  'unit': 'kg/s',      'color': '#D85A30', 'dec': 4},
+    'FAR':         {'label': 'FAR',          'unit': '–',         'color': '#444441', 'dec': 4},
+    'V_jet':       {'label': 'V jet',        'unit': 'm/s',       'color': '#378ADD', 'dec': 1},
+    'V_bypass':    {'label': 'V bypass',     'unit': 'm/s',       'color': '#0F6E56', 'dec': 1},
+    'V0':          {'label': 'V0',           'unit': 'm/s',       'color': '#888780', 'dec': 1},
+    'm_core':      {'label': 'ṁ core',       'unit': 'kg/s',      'color': '#639922', 'dec': 2},
+    'm_bypass':    {'label': 'ṁ bypass',     'unit': 'kg/s',      'color': '#97C459', 'dec': 2},
+    'shaft_MW':    {'label': 'P eje',        'unit': 'MW',        'color': '#E24B4A', 'dec': 2},
+    'EGT':         {'label': 'EGT',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T0_K':        {'label': 'T0',           'unit': 'K',         'color': '#5DCAA5', 'dec': 1},
+    'Tt3_K':       {'label': 'T3t',          'unit': 'K',         'color': '#D85A30', 'dec': 1},
+    'Tt4_K':       {'label': 'T4t',          'unit': 'K',         'color': '#7F77DD', 'dec': 0},
+    'Tt5_K':       {'label': 'T5t',          'unit': 'K',         'color': '#378ADD', 'dec': 1},
+    'Pt0_kPa':     {'label': 'P0t',          'unit': 'kPa',       'color': '#534AB7', 'dec': 2},
+    'Pt3_kPa':     {'label': 'P3t',          'unit': 'kPa',       'color': '#993556', 'dec': 2},
+    'P0_kPa':      {'label': 'P0',           'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
+    'opr':         {'label': 'OPR (π23)',    'unit': '–',         'color': '#534AB7', 'dec': 2},
+    'tit_limit':   {'label': 'TIT límite',   'unit': 'K',         'color': '#888780', 'dec': 0},
+}
+
+# Estado interno del histórico
+_tlm_history: dict = {}    # key -> deque de (t_segundos, valor)
+_tlm_t0 = None             # instante de referencia (s)
+
+
+def reset_telemetry_history():
+    """Vacía el historial. Llámalo si reinicias la simulación."""
+    global _tlm_t0
+    _tlm_history.clear()
+    _tlm_t0 = None
+
+
+def _tlm_meta_for(key):
+    """Metadatos del parámetro; deduce la unidad por el sufijo si no está registrado."""
+    if key in PARAM_META:
+        return PARAM_META[key]
+    unit = ''
+    if   key.endswith('_K'):    unit = 'K'
+    elif key.endswith('_kPa'):  unit = 'kPa'
+    elif key.endswith('_kN'):   unit = 'kN'
+    elif key.endswith('_MW'):   unit = 'MW'
+    elif key.endswith('_kg_s'): unit = 'kg/s'
+    return {'label': key, 'unit': unit, 'color': '#666666', 'dec': 2}
+
+
+def update_telemetry_figure(data, selected, window_s=TLM_WINDOW_S):
+    """
+    Añade una muestra al historial interno y devuelve la figura Plotly
+    con las trazas de las claves indicadas en `selected`.
+    `data` puede contener cualquier cosa: sólo se guardan int/float (no bools).
+    """
+    global _tlm_t0
+    now = time.time()
+    if _tlm_t0 is None:
+        _tlm_t0 = now
+    t = now - _tlm_t0
+
+    # 1) Append de la muestra actual (sólo escalares numéricos)
+    for k, v in data.items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            continue
+        buf = _tlm_history.get(k)
+        if buf is None:
+            buf = deque(maxlen=TLM_MAX_HISTORY)
+            _tlm_history[k] = buf
+        buf.append((t, float(v)))
+
+    # 2) Trazas para las variables seleccionadas
+    selected = list(selected) if selected else []
+    fig = go.Figure()
+    t_min = t - window_s
+    for key in selected:
+        buf = _tlm_history.get(key)
+        if not buf:
+            continue
+        pts = [(tt, vv) for (tt, vv) in buf if tt >= t_min]
+        if not pts:
+            continue
+        xs = [tt - t for (tt, vv) in pts]   # 0 = ahora, negativos = atrás
+        ys = [vv for (_, vv) in pts]
+        meta = _tlm_meta_for(key)
+        last = ys[-1]
+        name = f"{meta['label']} = {last:.{meta['dec']}f} {meta['unit']}".rstrip()
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode='lines', name=name,
+            line={'color': meta['color'], 'width': 1.7,
+                  'shape': 'spline', 'smoothing': 0.6},
+            hovertemplate=(f"<b>{meta['label']}</b>: "
+                           f"%{{y:.{meta['dec']}f}} {meta['unit']}"
+                           "<br>Δt = %{x:.1f} s<extra></extra>"),
+        ))
+
+    # 3) Layout base (el caller puede sobreescribirlo para casar paleta)
+    fig.update_layout(
+        margin={'l': 54, 'r': 12, 't': 30, 'b': 36},
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        showlegend=True,
+        legend={'orientation': 'h',
+                'yanchor': 'bottom', 'y': 1.0,
+                'xanchor': 'left',   'x': 0,
+                'bgcolor': 'rgba(0,0,0,0)'},
+        xaxis={'range': [-window_s, 0]},
+        yaxis={'autorange': True},      # ← se adapta al máximo de las trazas
+        uirevision='static',
+        transition={'duration': 0},
+    )
+    return fig
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  MOTORES
@@ -1007,8 +1142,10 @@ PANEL_GRAPHS = {
     "background": C["panel"],
     "border": f"1px solid {C['border']}",
     "paddingLeft": "8px", "paddingRight": "8px",
-    "overflowY": "auto",
-    "height": "calc(60vh - 80px)",
+    "height": "calc(90vh)",
+    "display": "flex",            # apila los hijos en columna
+    "flexDirection": "column",
+    "overflow": "hidden",         # nada de scroll: las gráficas se ajustan
 }
 
 sim_screen = html.Div([
@@ -1109,7 +1246,7 @@ sim_screen = html.Div([
 
         ], style={"paddingTop":"4px","display":"flex","flexDirection":"column"}),
 
-    ], style={"width":"65%","paddingLeft":"6px","paddingRight":"6px",
+    ], style={"width":"45%","paddingLeft":"6px","paddingRight":"6px",
               "display":"flex","flexDirection":"column"}),
 
     # ── COL C (30%) — derecha: selector + gráficas + actuaciones ─────────
@@ -1118,27 +1255,98 @@ sim_screen = html.Div([
         # Selector de gráfica
         html.Div([
             html.Div("Gráficas", className="section-head mt-2"),
+            html.Div(dcc.Graph(id="graph-ts",
+                                config={"displayModeBar":False, "responsive":True},
+                                style={"height":"100%"}),
+                                id="wrap-ts", className="graph-card mb-1",
+                                style={"flex":"1 1 0", "minHeight":0}),
+            # ── Panel de telemetría en vivo ──────────────────────────────────────────────────────────
             html.Div([
-                html.Button("Ciclo T-s",      id="btn-chart-ts",   n_clicks=0, className="chart-btn chart-btn-active"),
-                html.Button("Mapa Compresor", id="btn-chart-comp", n_clicks=0, className="chart-btn"),
-            ], className="chart-selector mb-1"),
-            html.Div(dcc.Graph(id="graph-ts",   config={"displayModeBar":False},
-                               style={"height":"270px"}),
-                     id="wrap-ts", className="graph-card mb-1"),
-            html.Div(dcc.Graph(id="graph-comp", config={"displayModeBar":False},
-                               style={"height":"270px"}),
-                     id="wrap-comp", className="graph-card mb-1",
-                     style={"display":"none"}),
-            # Telemetría oculta — ID necesario para el callback
+                # Cabecera: indicador EN VIVO + desplegable de variables
+                html.Div([
+                    html.Span([
+                        html.Span("●", id="tlm-live-dot",
+                                  style={"color": C["accent3"], "fontSize": "12px",
+                                         "marginRight": "6px"}),
+                        html.Span("EN VIVO",
+                                  style={"fontSize": "9px",
+                                         "letterSpacing": "0.08em",
+                                         "fontFamily": C["mono"],
+                                         "color": C["dim"]}),
+                    ]),
+                    html.Details([
+                        html.Summary(
+                            id="tlm-summary",
+                            children="Variables (2) ▾",
+                            style={"cursor": "pointer",
+                                   "fontSize": "10px",
+                                   "fontFamily": C["mono"],
+                                   "color": C["text"],
+                                   "padding": "3px 8px",
+                                   "border": f"1px solid {C['border']}",
+                                   "borderRadius": "4px",
+                                   "listStyle": "none",
+                                   "userSelect": "none",
+                                   "background": C["panel2"]},
+                        ),
+                        html.Div(
+                            dcc.Checklist(
+                                id="tlm-checklist",
+                                options=[{"label": k, "value": k} for k in PARAM_META],
+                                value=["Tt3_K", "opr"],
+                                # Truco clave: row-reverse + space-between
+                                # → texto a la izquierda, recuadro a la derecha
+                                labelStyle={
+                                    "display": "flex",
+                                    "flexDirection": "row-reverse",
+                                    "justifyContent": "space-between",
+                                    "alignItems": "center",
+                                    "fontFamily": C["mono"],
+                                    "fontSize": "11px",
+                                    "color": C["text"],
+                                    "padding": "3px 0",
+                                    "borderBottom": f"1px solid {C['border']}",
+                                    "cursor": "pointer",
+                                },
+                                inputStyle={"margin": "0 0 0 12px",
+                                            "cursor": "pointer"},
+                            ),
+                            style={"position": "absolute",
+                                   "right": 0, "top": "110%",
+                                   "background": C["panel"],
+                                   "border": f"1px solid {C['border']}",
+                                   "borderRadius": "4px",
+                                   "padding": "6px 10px",
+                                   "boxShadow": "0 4px 12px rgba(0,0,0,0.2)",
+                                   "zIndex": 50,
+                                   "minWidth": "190px",
+                                   "maxHeight": "280px",
+                                   "overflowY": "auto"},
+                        ),
+                    ], style={"position": "relative"}),
+                ], style={"display": "flex",
+                          "alignItems": "center",
+                          "justifyContent": "space-between",
+                          "padding": "4px 8px 0 8px"}),
+                dcc.Graph(id="graph-tlm",
+                          config={"displayModeBar":False, "responsive":True},
+                          style={"flex":"1 1 0", "minHeight":0}),
+                dcc.Interval(id="tlm-interval", interval=500, n_intervals=0),
+                ], id="wrap-tlm", className="graph-card mb-1",
+                style={"flex":"1 1 0", "minHeight":0,
+                      "display":"flex", "flexDirection":"column"}),
+            # Telemetría oculta — ID necesario para el callback (tabla, no la gráfica)
             html.Div(html.Table(id="tele-table", className="tele-table"),
                      style={"display":"none"}),
+            # Almacén con la última r serializable (la consume update_telemetry)
+            dcc.Store(id="telemetry-data-store"),
         ], style=PANEL_GRAPHS),
 
         # Botón ACTUACIONES
         html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
                     className="btn-actuaciones mt-3"),
 
-    ], style={"width":"20%","paddingLeft":"6px",
+    ], style={"width":"40%","paddingLeft":"6px",
               "display":"flex","flexDirection":"column"}),
 
 ], style={
@@ -1295,19 +1503,39 @@ def navigate(*args):
     )
 
 
+# ── Telemetría en vivo ───────────────────────────────────────────────────────
+# Cada tick del Interval (o cada cambio de selección / cambio en el Store)
+# muestrea la r vigente y refresca la traza. La función externa mantiene su
+# propio buffer histórico, así que aquí sólo le pasamos el dict.
 @app.callback(
-    Output("wrap-ts",        "style"),
-    Output("wrap-comp",      "style"),
-    Output("btn-chart-ts",   "className"),
-    Output("btn-chart-comp", "className"),
-    Input("btn-chart-ts",    "n_clicks"),
-    Input("btn-chart-comp",  "n_clicks"),
-    prevent_initial_call=True,
+    Output("graph-tlm",   "figure"),
+    Output("tlm-summary", "children"),
+    Input("tlm-interval",         "n_intervals"),
+    Input("tlm-checklist",        "value"),
+    Input("telemetry-data-store", "data"),
 )
-def select_chart(_n_ts, _n_comp):
-    if ctx.triggered_id == "btn-chart-comp":
-        return {"display":"none"}, {}, "chart-btn", "chart-btn chart-btn-active"
-    return {}, {"display":"none"}, "chart-btn chart-btn-active", "chart-btn"
+def update_telemetry(_n, selected, data):
+    selected = selected or []
+    if not data:
+        # Aún no se ha calculado nada: figura vacía pero estilada
+        fig = go.Figure().update_layout(**_plot_layout("Telemetría"))
+        fig.update_xaxes(**_ax("t [s]"), range=[-60, 0])
+        fig.update_yaxes(**_ax())
+        return fig, f"Variables ({len(selected)}) ▾"
+
+    fig = update_telemetry_figure(data, selected, window_s=60)
+    # Sobreescribir layout para casar con la paleta del laboratorio
+    fig.update_layout(**_plot_layout("Telemetría"))
+    fig.update_xaxes(**_ax("t [s]"), range=[-60, 0])
+    fig.update_yaxes(**_ax(), autorange=True)
+    # Conservar la leyenda interna ya construida por la función
+    fig.update_layout(showlegend=True,
+                      legend=dict(orientation="h",
+                                  yanchor="bottom", y=1.02,
+                                  xanchor="left", x=0,
+                                  font=dict(size=9, family=C["mono"], color=C["dim"]),
+                                  bgcolor="rgba(0,0,0,0)"))
+    return fig, f"Variables ({len(selected)}) ▾"
 
 
 # Mapa sid → step, para decidir el formato del label
@@ -1346,7 +1574,6 @@ def update_labels(*vals):
     Output("m-eta_prop",       "children"),
     Output("m-eta_glob",       "children"),
     Output("graph-ts",           "figure"),
-    Output("graph-comp",         "figure"),
     Output("graph-gauge-thrust", "figure"),
     Output("graph-gauge-epr",    "figure"),
     Output("tele-table",         "children"),
@@ -1356,6 +1583,7 @@ def update_labels(*vals):
     Output("onespool-diagram", "style"),
     Output("other-diagram",    "children"),
     Output("other-diagram",    "style"),
+    Output("telemetry-data-store", "data"),
     Input("active-engine", "data"),
     Input("eta-override-store",  "data"),
     *[Input(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
@@ -1389,9 +1617,10 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         ef_blank = {"data":[],"layout":{"paper_bgcolor":C["panel"],
                     "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}}
         return ["—", "—", "—", "—", "—", "—", "—",
-                ef, ef, ef, ef, et, msg_str, {"display":"block"},
+                ef, ef, ef, et, msg_str, {"display":"block"},
                 ef_blank, {"height":"100%","width":"100%","display":"none"},
-                None, {"display":"none"}]
+                None, {"display":"none"},
+                None]   # telemetry-data-store: sin datos en error
 
     try:
         r = cfg["runner"](p)
@@ -1504,80 +1733,6 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     fig_ts.update_xaxes(**_ax("Entropía relativa  s  [kJ/kg·K]"))
     fig_ts.update_yaxes(**_ax("Temperatura  T  [K]"))
 
-
-
-    # ── Línea de funcionamiento del compresor ─────────────────────────────
-    # Barrido de OPR manteniendo todos los demás parámetros fijos
-    # Eje X: flujo másico reducido  W√T/P (proporcional a G·√T2t/P2t)
-    # Eje Y: relación de presiones del compresor
-    sweep_p = cfg["sweep_base"](p)
-    opr_key = "pi_lpc" if engine_type == "TwinSpoolEngine" else "pi_23"
-    opr_cur = r.get("opr", p.get("os_pi", p.get("ts_pilpc", p.get("tf_pi", p.get("tp_pi", 10)))))
-    T2t = r["T0_K"]; P2t = r["Pt0_kPa"] * 1000
-
-    oprs   = np.linspace(1.5, 50, 60)
-    w_red  = []   # flujo másico reducido (u.a.)
-    pi_pts = []
-    for o in oprs:
-        try:
-            if engine_type == "TwinSpoolEngine":
-                pp = {**sweep_p, "pi_lpc": max(1.1, o**0.4), "pi_hpc": max(1.1, o**0.6)}
-            else:
-                pp = {**sweep_p, opr_key: o}
-            cls = ENGINE_CONFIGS[engine_type]["engine_cls"]
-            rr  = cls().simulate(**pp)
-            # Flujo másico reducido: G·√(T2t) / P2t  (en u.a.)
-            T2_loc = rr["T0_K"]; P2_loc = rr["Pt0_kPa"] * 1000
-            G_loc  = sweep_p.get("G", 20)
-            w_red.append(G_loc * np.sqrt(T2_loc) / max(P2_loc, 1))
-            pi_pts.append(o)
-        except Exception:
-            pass
-
-    # Punto de funcionamiento actual
-    G_cur  = sweep_p.get("G", 20)
-    wred_cur = G_cur * np.sqrt(T2t) / max(P2t, 1)
-    pi_cur   = opr_cur if engine_type != "TwinSpoolEngine" else p.get("ts_pilpc", 1.6)
-
-    fig_comp = go.Figure()
-    # Curva de la línea de funcionamiento
-    if w_red:
-        fig_comp.add_trace(go.Scatter(
-            x=w_red, y=pi_pts, mode="lines",
-            line=dict(color=color, width=2),
-            name="Linea funcionamiento",
-            hovertemplate="W_red=%{x:.3f}<br>π=%{y:.2f}<extra></extra>",
-        ))
-    # Punto de diseño actual
-    fig_comp.add_trace(go.Scatter(
-        x=[wred_cur], y=[pi_cur], mode="markers",
-        marker=dict(size=10, color=C["accent2"], symbol="diamond",
-                    line=dict(color=C["text"], width=1.5)),
-        name="Pto. diseño",
-        hovertemplate="W_red=%{x:.3f}<br>π=%{y:.2f}<extra></extra>",
-    ))
-    # Líneas de margen de surge (zona de inestabilidad, ~15% sobre la línea)
-    if w_red:
-        w_surge = [w * 0.85 for w in w_red]
-        fig_comp.add_trace(go.Scatter(
-            x=w_surge, y=pi_pts, mode="lines",
-            line=dict(color=C["accent2"], width=1, dash="dash"),
-            name="Limite surge",
-            hoverinfo="skip",
-        ))
-        fig_comp.add_vrect(
-            x0=0, x1=min(w_surge),
-            fillcolor=_rgba(C["accent2"], 0.07),
-            line_width=0, layer="below",
-        )
-    fig_comp.update_layout(
-        **_plot_layout("Linea de funcionamiento  [Compresor]"),
-        legend=dict(font=dict(size=8, family=C["mono"], color=C["dim"]),
-                    bgcolor="rgba(0,0,0,0)", borderwidth=0,
-                    x=0.02, y=0.98),
-    )
-    fig_comp.update_xaxes(**_ax("Flujo masico reducido  W√T/P  [u.a.]"))
-    fig_comp.update_yaxes(**_ax("Relacion de presiones  π"))
 
 
     # ── Telemetría con subíndices ─────────────────────────────────────────
@@ -1827,10 +1982,17 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         n_major=4,
     )
 
+    # Subconjunto serializable de r para el Store de telemetría
+    # (la función update_telemetry_figure ignora claves no numéricas, pero
+    #  un dcc.Store sólo acepta JSON, así que filtramos aquí)
+    tlm_data = {k: v for k, v in r.items()
+                if isinstance(v, (int, float)) and not isinstance(v, bool)}
+
     return [metrics[0], metrics[1], metrics[2], metrics[3], metrics[4], metrics[5], metrics[6],
-            fig_ts, fig_comp, fig_gauge_thrust, fig_gauge_epr,
+            fig_ts, fig_gauge_thrust, fig_gauge_epr,
             table, alert_msg, alert_style,
-            onespool_fig, onespool_style, other_children, other_style]
+            onespool_fig, onespool_style, other_children, other_style,
+            tlm_data]
 
 
 # ── Navegación sim ↔ actuaciones ─────────────────────────────────────────────

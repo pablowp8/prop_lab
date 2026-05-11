@@ -176,17 +176,17 @@ def _perf(V_jet, V0, m_dot, FAR, opr, A_8,
     F_bypass = m_bypass * (V_bypass  - V0)
     F_total  = F_core + F_bypass
 
-    fuel_kg_s = m_dot * FAR
-    SFC       = fuel_kg_s / (F_total/1000)
+    fuel_kg_s = m_dot * FAR   # FAR es la fracción de combustible
+    SFC       = fuel_kg_s* 1e6/F_total # g/kNs
     TSFC_mg   = SFC * 1e6 / 9.81
 
     eta_th    = 0.5*m_dot*(V_jet**2-V0**2)/(fuel_kg_s*42*10**6)
     if V0 == 0:
         eta_prop = 0
+        eta_global = 0
     else:
         eta_prop  = 2/(1+V_jet/V0)
-    
-    eta_global = eta_th * eta_prop
+        eta_global = eta_th * eta_prop
 
     return {
         "thrust_kN":  F_total / 1000,

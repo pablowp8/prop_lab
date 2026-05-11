@@ -160,7 +160,7 @@ def update_telemetry_figure(data, selected, window_s=TLM_WINDOW_S):
 
     # 3) Layout base (el caller puede sobreescribirlo para casar paleta)
     fig.update_layout(
-        margin={'l': 54, 'r': 12, 't': 30, 'b': 36},
+        margin={'l': 54, 'r': 12, 't': 20, 'b': 36},
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=True,
@@ -199,7 +199,7 @@ ENGINE_CONFIGS = {
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
             ("os_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
-            ("os_ec",    "\u03B7\u2080\u2083",  0.6, 1, 1, 0.01),
+            ("os_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1, 0.01),
             ("os_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
             ("os_et",    "\u03B7\u2084\u2085",    0.6, 1, 1, 0.01),
             ("os_enoz",  "\u03B7\u2085\u2088",     0.6, 1, 1, 0.01),
@@ -391,7 +391,8 @@ def make_slider(sid, label, mn, mx, dfl, stp):
 def metric_card(label, mid, unit, cls=""):
     return html.Div([
         html.Div(label, className="metric-label",
-                 style={"fontSize":"0.55rem","marginBottom":"1px"}),
+                 style={"fontSize":"0.55rem","marginBottom":"1px",
+                        "fontFamily":"Arial, sans-serif"}),
         html.Div([
             html.Span("--", id=f"m-{mid}", className="metric-val",
                       style={"fontSize":"0.82rem"}),
@@ -768,7 +769,7 @@ def _build_onespool(df):
     # ── Líneas de estación ────────────────────────────────────────────────────
     ST_Y0, ST_Y1 = 0.02, 0.98
     STATIONS = [
-        (20,  "0"),
+        (20,  "1"),
         (110, "2"),
         (260, "3"),
         (370, "4"),
@@ -1142,10 +1143,9 @@ PANEL_GRAPHS = {
     "background": C["panel"],
     "border": f"1px solid {C['border']}",
     "paddingLeft": "8px", "paddingRight": "8px",
-    "height": "calc(90vh)",
-    "display": "flex",            # apila los hijos en columna
+    "display": "flex",
     "flexDirection": "column",
-    "overflow": "hidden",         # nada de scroll: las gráficas se ajustan
+    "overflow": "hidden",
 }
 
 sim_screen = html.Div([
@@ -1153,13 +1153,20 @@ sim_screen = html.Div([
     # Navbar
     html.Div([
         html.Div([
-            html.Button("← MENU", id="btn-back", n_clicks=0),
+            html.Button("◂ MENU", id="btn-back", n_clicks=0),
             html.Span("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
                                          "fontSize":"25px","letterSpacing":"5px",
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
-            html.Span("● LIVE",           className="nav-badge live me-2"),
+            # Botón ACTUACIONES
+            html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
+                        style={"fontFamily":C["mono"],"fontSize":"10px",
+                               "color":C["dim"],"border":f"1px solid {C['border2']}",
+                               "padding":"3px 10px","borderRadius":"1px",
+                               "background":C["panel2"],"letterSpacing":"1px",
+                               "cursor":"pointer","marginRight":"12px"}),
+            html.Span("● EN VIVO", className="nav-badge live me-2"),
             html.Span(id="sim-eng-label", className="nav-badge me-2"),
             # html.Span("SESION: LAB-04",   className="nav-badge"),
         ], style={"display":"flex","alignItems":"center"}),
@@ -1222,17 +1229,17 @@ sim_screen = html.Div([
                 # Cards col 1
                 html.Div([
                     metric_card("Empuje neto",  "thrust",    "kN",     "good"),
-                    metric_card("Consumo esp.", "tsfc",      "mg/Ns",  ""),
+                    metric_card("Empuje específico",   "sp_thrust", "m/s", ""),
+                    metric_card("Consumo específico", "SFC",      "g/KNs",  ""),
                     metric_card("Combustible",  "fuel",      "kg/s",   "warn"),
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
                 # Cards col 2
                 html.Div([
-                    metric_card("η motor",       "eta_th",    "%",      ""),
-                    metric_card("η propulsivo",  "eta_prop",  "%",      ""),
-                    metric_card("η motoprop.",   "eta_glob",  "%",      ""),
-                    metric_card("Empuje esp.",   "sp_thrust", "N·s/kg", ""),
+                    metric_card(["η motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_th",   "%", ""),
+                    metric_card(["η propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_prop",  "%", ""),
+                    metric_card(["η motoprop.",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_glob",  "%", ""),
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
@@ -1255,114 +1262,73 @@ sim_screen = html.Div([
     # ── COL C (30%) — derecha: selector + gráficas + actuaciones ─────────
     html.Div([
 
-        # Selector de gráfica
+        # Panel T-S
         html.Div([
-            # html.Div("Gráficas", className="section-head mt-2"),
+            section_head("CICLO T-S"),
+            dcc.Graph(id="graph-ts",
+                      config={"displayModeBar":False, "responsive":True},
+                      style={"flex":"1 1 0","minHeight":0,"width":"100%"}),
+        ], id="wrap-ts", style={**PANEL_GRAPHS, "flex":"1 1 0", "minHeight":0,
+                                 "marginBottom":"8px","paddingTop":"5px"}),
+
+        # Panel Telemetría
+        html.Div([
+            section_head("TELEMETRÍA"),
             html.Div([
-                html.Span("CICLO T-S",
-                            style={"fontSize": "12px",
-                                    "letterSpacing": "0.08em",
-                                    "fontFamily": C["mono"],
-                                    "color": C["dim"], 
-                                    "padding": "12px 4px 0px 8px"}),
-                dcc.Graph(id="graph-ts",
-                            config={"displayModeBar":False, "responsive":True},
-                            style={"flex":"1 1 0", "minHeight":0})
-                    ],  id="wrap-ts", className="graph-card mb-1",
-                        style={"flex":"1 1 0", "minHeight":0,
-                      "display":"flex", "flexDirection":"column", "marginTop":"4px"}),
-            # ── Panel de telemetría en vivo ──────────────────────────────────────────────────────────
-            html.Div([
-                # Cabecera: indicador EN VIVO + desplegable de variables
-                html.Div([
-                    html.Span([
-                        html.Span("Telemetría",
-                                  style={"fontSize": "12px",
-                                         "letterSpacing": "0.08em",
-                                         "fontFamily": C["mono"],
-                                         "color": C["dim"]}),
-                        html.Span("●", id="tlm-live-dot",
-                                  style={"color": C["accent3"], "fontSize": "12px",
-                                         "marginLeft": "32px",
-                                         "marginRight": "6px"}),
-                        html.Span("EN VIVO",
-                                  style={"fontSize": "12px",
-                                         "letterSpacing": "0.08em",
-                                         "fontFamily": C["mono"],
-                                         "color": C["dim"]}),
-                        
-                    ]),
+                    dcc.Graph(id="graph-tlm",
+                              config={"displayModeBar":False, "responsive":True},
+                              style={"flex":"1 1 0","minHeight":0,"width":"100%"}),
                     html.Details([
                         html.Summary(
                             id="tlm-summary",
-                            children="Variables (2) ▾",
-                            style={"cursor": "pointer",
-                                   "fontSize": "10px",
-                                   "fontFamily": C["mono"],
-                                   "color": C["text"],
-                                   "padding": "3px 8px",
-                                   "border": f"1px solid {C['border']}",
-                                   "borderRadius": "4px",
-                                   "listStyle": "none",
-                                   "userSelect": "none",
-                                   "background": C["panel2"]},
+                            children="Variables ▾",
+                            style={"cursor":"pointer",
+                                   "fontSize":"10px",
+                                   "fontFamily":C["mono"],
+                                   "color":C["text"],
+                                   "padding":"3px 10px",
+                                   "border":f"1px solid {C['border']}",
+                                   "borderRadius":"4px",
+                                   "listStyle":"none",
+                                   "userSelect":"none",
+                                   "background":C["panel2"],
+                                   "whiteSpace":"nowrap"},
                         ),
                         html.Div(
                             dcc.Checklist(
                                 id="tlm-checklist",
                                 options=[{"label": v["label"], "value": k} for k, v in PARAM_META.items()],
                                 value=["Tt3_K"],
-                                # Truco clave: row-reverse + space-between
-                                # → texto a la izquierda, recuadro a la derecha
                                 labelStyle={
-                                    "display": "flex",
-                                    "flexDirection": "row-reverse",
-                                    "justifyContent": "space-between",
-                                    "alignItems": "center",
-                                    "fontFamily": C["mono"],
-                                    "fontSize": "11px",
-                                    "color": C["text"],
-                                    "padding": "3px 0",
-                                    "borderBottom": f"1px solid {C['border']}",
-                                    "cursor": "pointer",
+                                    "display":"flex","flexDirection":"row-reverse",
+                                    "justifyContent":"space-between","alignItems":"center",
+                                    "fontFamily":C["mono"],"fontSize":"11px",
+                                    "color":C["text"],"padding":"0px 0",
+                                    "cursor":"pointer",
                                 },
-                                inputStyle={"margin": "0 0 0 12px",
-                                            "cursor": "pointer"},
+                                inputStyle={"margin":"0 0 0 0px","cursor":"pointer"},
                             ),
-                            style={"position": "absolute",
-                                   "right": 0, "top": "110%",
-                                   "background": C["panel"],
-                                   "border": f"1px solid {C['border']}",
-                                   "borderRadius": "4px",
-                                   "padding": "6px 10px",
-                                   "boxShadow": "0 4px 12px rgba(0,0,0,0.2)",
-                                   "zIndex": 50,
-                                   "minWidth": "190px",
-                                   "maxHeight": "280px",
-                                   "overflowY": "auto"},
+                            style={"background":C["panel"],
+                                   "border":f"1px solid {C['border']}",
+                                   "borderRadius":"4px",
+                                   "padding":"6px 10px",
+                                   "maxHeight":"180px",
+                                   "overflowY":"auto"},
                         ),
-                    ], style={"position": "relative"}),
-                ], style={"display": "flex",
-                          "alignItems": "center",
-                          "justifyContent": "space-between",
-                          "padding": "4px 8px 0px 8px"}),
-                dcc.Graph(id="graph-tlm",
-                          config={"displayModeBar":False, "responsive":True},
-                          style={"flex":"1 1 0", "minHeight":0}),
-                dcc.Interval(id="tlm-interval", interval=500, n_intervals=0),
-                ], id="wrap-tlm", className="graph-card mb-1",
-                style={"flex":"1 1 0", "minHeight":0,
-                      "display":"flex", "flexDirection":"column"}),
-            # Telemetría oculta — ID necesario para el callback (tabla, no la gráfica)
+                    ], style={"position":"absolute",
+                              "top":"8px","right":"8px",
+                              "zIndex":9999}),
+                ], style={"flex":"1 1 0","minHeight":0,
+                          "position":"relative","overflow":"visible",
+                          "display":"flex","flexDirection":"column"}),
+            dcc.Interval(id="tlm-interval", interval=500, n_intervals=0),
             html.Div(html.Table(id="tele-table", className="tele-table"),
                      style={"display":"none"}),
-            # Almacén con la última r serializable (la consume update_telemetry)
             dcc.Store(id="telemetry-data-store"),
-        ], style=PANEL_GRAPHS),
-
-        # Botón ACTUACIONES
-        html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
-                    className="btn-actuaciones mt-3"),
+        ], id="wrap-tlm",
+                style={**PANEL_GRAPHS, "flex":"1 1 0", "minHeight":0,
+                      "display":"flex", "flexDirection":"column",
+                      "overflow":"visible","paddingTop":"5px"}),
 
     ], style={"width":"40%","paddingLeft":"6px",
               "display":"flex","flexDirection":"column"}),
@@ -1555,11 +1521,12 @@ def update_telemetry(_n, selected, data):
     fig.update_yaxes(**_ax(), range=[0, ymax * 1.1], autorange=False)
     # Conservar la leyenda interna ya construida por la función
     fig.update_layout(showlegend=True,
-                      legend=dict(orientation="h",
-                                  yanchor="bottom", y=1.02,
-                                  xanchor="left", x=0,
-                                  font=dict(size=9, family=C["mono"], color=C["dim"]),
-                                  bgcolor="rgba(0,0,0,0)"))
+                    legend=dict(orientation="v",
+                    yanchor="top", y=0.9,
+                    xanchor="left", x=1.02,
+                    font=dict(size=8, family=C["mono"], color=C["dim"]),
+                    bgcolor="rgba(0,0,0,0)"),
+        margin=dict(l=40, r=100, t=20, b=30))
     return fig, f"Variables ({len(selected)}) ▾"
 
 
@@ -1589,11 +1556,10 @@ def update_labels(*vals):
             out.append(f"{v:.2f}")
     return out
 
-
 @app.callback(
     Output("m-thrust",         "children"),
-    Output("m-tsfc",           "children"),
     Output("m-sp_thrust",      "children"),
+    Output("m-SFC",           "children"),
     Output("m-fuel",           "children"),
     Output("m-eta_th",         "children"),
     Output("m-eta_prop",       "children"),
@@ -1657,17 +1623,17 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     # Métricas
     _V0      = r["V0"]
     _Vjet    = r["V_jet"]
-    _G       = r["m_core"] + r["m_bypass"]
-    _sp_thrust = (r["thrust_kN"] * 1000) / max(_G, 0.001)   # N·s/kg = N / (kg/s)
+    _G       = r["m_core"] + r["m_bypass"] # kg/s
+    _sp_thrust = (r["thrust_kN"] * 1000) /_G  # N·s/kg = N / (kg/s)
 
     metrics = [
         f"{r['thrust_kN']:.2f}",
-        f"{r['TSFC_mg']:.3f}",
+        f"{_sp_thrust:.1f}",
+        f"{r['SFC']:.3f}",
         f"{r['fuel_kg_s']:.4f}",
         f"{r['eta_th']:.1f}",
         f"{r['eta_prop']:.1f}",
         f"{r['eta_global']:.1f}",
-        f"{_sp_thrust:.1f}",
     ]
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────
@@ -1755,8 +1721,9 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             borderwidth=1, borderpad=3,
         )
     fig_ts.update_layout(**_plot_layout(""))
-    fig_ts.update_xaxes(**_ax("Entropía relativa  s  [kJ/kg·K]"))
-    fig_ts.update_yaxes(**_ax("Temperatura  T  [K]"))
+    fig_ts.update_xaxes(**_ax("Entropía relativa, s [kJ/kg·K]"))
+    fig_ts.update_yaxes(**_ax("Temperatura, T [K]"))
+    fig_ts.update_layout(margin=dict(l=40, r=10, t=10, b=30))
 
 
 

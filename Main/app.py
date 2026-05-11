@@ -198,11 +198,11 @@ ENGINE_CONFIGS = {
         ],
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
-            ("os_edif",  "\u03B7 difusor",    0.6, 1, 1, 0.01),
-            ("os_ec",    "\u03B7 compresor",  0.6, 1, 1, 0.01),
-            ("os_ecc",   "\u03B7 camara",     0.6, 1, 1, 0.01),
-            ("os_et",    "\u03B7 turbina",    0.6, 1, 1, 0.01),
-            ("os_enoz",  "\u03B7 tobera",     0.6, 1, 1, 0.01),
+            ("os_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
+            ("os_ec",    "\u03B7\u2080\u2083",  0.6, 1, 1, 0.01),
+            ("os_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
+            ("os_et",    "\u03B7\u2084\u2085",    0.6, 1, 1, 0.01),
+            ("os_enoz",  "\u03B7\u2085\u2088",     0.6, 1, 1, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine,
         "runner": lambda p: sim.OneSpoolEngine().simulate(
@@ -367,7 +367,7 @@ ALL_SLIDER_IDS = [
 ALL_LABEL_IDS = [
     sid
     for cfg in ENGINE_CONFIGS.values()
-    for section in ("sliders_vuelo", "sliders_diseno")
+    for section in ("sliders_vuelo", "sliders_diseno", "sliders_comp")
     for sid, *_ in cfg[section]
 ]
 
@@ -382,7 +382,7 @@ def make_slider(sid, label, mn, mx, dfl, stp):
                                     "fontFamily":C["mono"]}),
             html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],  # Valor numérico
                                                "fontSize":"0.75rem","color":C["accent"]}),
-        ], style={"display":"flex","justifyContent":"space-between","marginBottom":"3px"}),
+        ], style={"display":"flex","justifyContent":"space-between","marginBottom":"-6px"}),
         dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
                    marks=None, tooltip={"always_visible":False}, className="mb-1"),
     ], className="mb-2")
@@ -1087,7 +1087,7 @@ for eid, cfg in ENGINE_CONFIGS.items():
         "background": C["panel"],
         "border": f"1px solid {C['border']}",
         "paddingTop":"5px", "paddingLeft":"10px", "paddingRight":"10px",
-        "marginTop": "12px",
+        "marginTop": "8px",
     }))
 
     # Panel desplegable de rendimientos (η)
@@ -1095,26 +1095,26 @@ for eid, cfg in ENGINE_CONFIGS.items():
         *[make_slider(sid, lbl, mn, mx, dfl, stp)
           for sid, lbl, mn, mx, dfl, stp in cfg["sliders_comp"]],
     ], id=f"eta-panel-{eid}", style={"display":"none",
-        "background": C["panel2"],
+        "background": C["panel"],
         "border": f"1px solid {C['border']}",
         "paddingTop":"5px","paddingLeft":"10px","paddingRight":"10px",
-        "marginTop":"4px",
+        "marginTop":"8px",
     })
     group.append(html.Div([
         html.Div([
-            html.Span("RENDIMIENTOS", style={"fontFamily":C["head"],"fontWeight":"700",
-                                             "fontSize":"0.7rem","letterSpacing":"3px",
-                                             "color":C["dim"]}),
+            html.Span("RENDIMIENTOS", className="section-head",
+                      style={"margin":"0","padding":"0","border":"none",
+                             "background":C["panel"]}),
             html.Button("▾", id=f"btn-eta-toggle-{eid}", n_clicks=0,
-                        style={"background":"transparent","border":"none",
+                        style={"background":C["panel"],"border":"none",
                                "color":C["dim"],"cursor":"pointer","fontSize":"14px",
-                               "float":"right","padding":"0 4px"}),
+                               "padding":"0 4px","lineHeight":"1"}),
         ], style={"display":"flex","justifyContent":"space-between","alignItems":"center",
                   "background":C["panel"],"border":f"1px solid {C['border']}",
                   "padding":"6px 10px","marginTop":"8px","cursor":"pointer"},
            id=f"eta-header-{eid}"),
         eta_sliders_content,
-    ]))
+    ], style={"background":C["panel"]}))
 
     all_slider_groups.append(html.Div(group, id=f"sliders-{eid}", style={"display":"none"}))
 
@@ -1173,8 +1173,9 @@ sim_screen = html.Div([
     html.Div([
         html.Div(all_slider_groups),
         html.Div(style={"height":"6px"}),
-    ], style={"width":"15%","display":"flex","flexDirection":"column",
-            "paddingRight":"6px"}),
+    ], style={"width":"20%","display":"flex","flexDirection":"column",
+              "paddingRight":"6px","overflowY":"auto",
+              "height":"calc(100vh - 80px)"}),
 
     # ── COL B (60%) — centro: diagrama + telemetría + métricas ───────────
     html.Div([

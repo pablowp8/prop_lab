@@ -65,11 +65,11 @@ class Component:
 
 
 class Difussor(Component):
-    def calculate(self, t_in, p_in, mach, pressure_ratio=1.0):
+    def calculate(self, t_in, p_in, s_in, mach, pressure_ratio=1.0):
         t_out = t_in * (1 + (self.gamma - 1) * mach**2 / 2)
         p_out = p_in * (1 + self.eta*(t_out/t_in - 1)) ** (self.gamma / (self.gamma - 1))
 
-        s = 0
+        s = s_in
         
         return t_out, p_out, s
 
@@ -269,8 +269,9 @@ class OneSpoolEngine:
         if eta_noz is not None: self.nozz.eta = eta_noz
 
         V0 = mach * speed_of_sound(T_0)
-
-        T_2t, P_2t, S_2         = self.dif.calculate(T_0, P_0, mach)
+        
+        S_0 = 0
+        T_2t, P_2t, S_2         = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c    = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
@@ -327,8 +328,9 @@ class OneSpoolEngine_PC:
         if eta_noz is not None: self.nozz.eta = eta_noz
 
         V0 = mach * speed_of_sound(T_0)
-
-        T_2t, P_2t, S_2              = self.dif.calculate(T_0, P_0, mach)
+        
+        S_0 = 0
+        T_2t, P_2t, S_2              = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c         = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
@@ -380,8 +382,9 @@ class SingleFlowTurbofan:
         if eta_noz is not None: self.nozz.eta        = eta_noz
 
         V0 = mach * speed_of_sound(T_0)
-
-        T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, mach)
+        
+        S_0 = 0
+        T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t,  P_3t, S_3,  W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_13t, P_13t, S_13, W_fan   = self.fan.calculate(T_2t,  P_2t, S_2, pi_fan)
         T_4t,  P_4t, S_4, FAR           = self.cc.calculate(T_3t, P_3t, S_3, tit)
@@ -443,8 +446,9 @@ class OneSpoolTurboprop:
         if eta_noz is not None: self.nozz.eta        = eta_noz
 
         V0 = mach * speed_of_sound(T_0)
-
-        T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, mach)
+        
+        S_0 = 0
+        T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t,  P_3t, S_3, W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t,  P_4t, S_4, FAR      = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G)

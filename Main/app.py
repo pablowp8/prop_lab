@@ -1636,54 +1636,61 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     # Entropía relativa: Δs = cp·ln(T2/T1) - R·ln(P2/P1)  [kJ/kg·K]
     # Estaciones: 0(estática) → 0t(ram) → 2t(dif) → 3t(comp) → 4t(cc)
     #             → 5t(turb) → 9(tobera salida) → 0(cierre)
-    _cp = 1.0043   # kJ/kg·K
-    _R  = 0.2871   # kJ/kg·K
+    # _cp = 1.0043   # kJ/kg·K
+    # _R  = 0.2871   # kJ/kg·K
 
-    def _ds(T1, P1, T2, P2):
-        """Incremento de entropía entre dos estados [kJ/kg·K]."""
-        return _cp * np.log(max(T2,1)/max(T1,1)) - _R * np.log(max(P2,0.001)/max(P1,0.001))
+    # def _ds(T1, P1, T2, P2):
+    #     """Incremento de entropía entre dos estados [kJ/kg·K]."""
+    #     return _cp * np.log(max(T2,1)/max(T1,1)) - _R * np.log(max(P2,0.001)/max(P1,0.001))
 
-    dict_st= r.get("stations")
+    
 
     # Recoge T y P de cada estación desde el DataFrame de simulación
-    def _st(station):
-        try:
-            T = float(dict_st[station]["T"])
-            P = float(dict_st[station]["P"])/1000 # Pa → kPa
-            S = float(dict_st[station]["S"]) 
-            return T, P, S
-        except Exception:
-            return None, None, None
+    # def _st(station):
+    #     try:
+    #         T = float(dict_st[station]["T"])
+    #         P = float(dict_st[station]["P"])/1000 # Pa → kPa
+    #         S = float(dict_st[station]["S"]) 
+    #         return T, P, S
+    #     except Exception:
+    #         return None, None, None
+    
+    dict_st= r.get("stations")
+    orden_est = [0, 1, 12, 13, 19, 2, 25, 3, 4, 45, 5, 6, 7, 8, 9]
+        
+    estaciones = [
+        est for est in orden_est
+        if est in dict_st
+        and dict_st[est].get('T') is not None
+        and dict_st[est].get('S') is not None
+        and dict_st[est].get('P') is not None
+    ]
+    ss = [dict_st[e]['S'] for e in estaciones]
+    Ts = [dict_st[e]['T'] for e in estaciones]
+    Ps = [dict_st[e]['P']/1000 for e in estaciones]
+    labels = [f"[{e}t]" for e in estaciones]
 
-    T0s,  P0s, S0s  = r["T0_K"],  r["P0_kPa"], 0   # estática entrada (0)
-    T0t,  P0t, S0t   = _st(0)                       # estación 0 en df = 2t (difusor entrada)
-    T2t,  P2t, S2t  = _st(2)                       # salida difusor
-    T3t,  P3t, S3t  = _st(3)                       # salida compresor
-    T4t,  P4t, S4t  = _st(4)                       # salida cámara (TIT)
-    T5t,  P5t, S5t  = _st(5)                       # salida turbina
-    T9,   P9, S9    = _st(9)                       # salida tobera (estática)
+    ss.append(ss[0])
+    Ts.append(Ts[0])
+    labels.append(labels[0])
 
-    # Fallback si alguna estación no está en el df
-    if T2t  is None: T2t,  P2t  = r["T0_K"],   r["Pt0_kPa"]
-    if T3t  is None: T3t,  P3t  = r["Tt3_K"],  r["Pt3_kPa"]
-    if T4t  is None: T4t,  P4t  = r["Tt4_K"],  r["Pt3_kPa"]
-    if T5t  is None: T5t,  P5t  = r["Tt5_K"],  r["Pt3_kPa"]
-    if T9   is None: T9,   P9   = r["Tt5_K"],  r["P0_kPa"]
+    for e in range(len(labels)):
+        if labels[e] in ['[0t]', '[19t]', '[9t]']:
+            labels[e] = labels[e].replace('t', '')
 
-    # # Entropía acumulada [kJ/kg·K] — s=0 en el estado estático de entrada
-    # s0s  = 0.0
-    # s0t  = s0s + _ds(T0s, P0s, T2t, P2t)      # ram: compresión isentrópica ideal
-    # s2t  = s0t + _ds(T2t, P2t, T2t, P2t)      # difusor (mismo punto, sin irreversibilidad adicional)
-    # s3t  = s2t + _ds(T2t, P2t, T3t, P3t)      # compresor (irreversible → s aumenta)
-    # s4t  = s3t + _ds(T3t, P3t, T4t, P4t)      # cámara combustión (isobara → s sube por calor)
-    # s5t  = s4t + _ds(T4t, P4t, T5t, P5t)      # turbina (irreversible → s aumenta un poco)
-    # s9   = s5t + _ds(T5t, P5t, T9,  P9)       # expansión en tobera
+    # T0s,  P0s, S0s  = r["T0_K"],  r["P0_kPa"], 0   # estática entrada (0)
+    # T0t,  P0t, S0t   = _st(0)                       # estación 0 en df = 2t (difusor entrada)
+    # T2t,  P2t, S2t  = _st(2)                       # salida difusor
+    # T3t,  P3t, S3t  = _st(3)                       # salida compresor
+    # T4t,  P4t, S4t  = _st(4)                       # salida cámara (TIT)
+    # T5t,  P5t, S5t  = _st(5)                       # salida turbina
+    # T9,   P9, S9    = _st(9)                       # salida tobera (estática)
 
     # Puntos del ciclo (cierra en 0s)
-    ss = [S0s,  S2t,  S3t,  S4t,  S5t,  S9,   S0s]
-    Ts = [T0s,  T2t,  T3t,  T4t,  T5t,  T9,   T0s]
-    labels = ["[0]", "[2t]", "[3t]",
-              "[4t]", "[5t]", "[9]", ""]
+    # ss = [S0s,  S2t,  S3t,  S4t,  S5t,  S9,   S0s]
+    # Ts = [T0s,  T2t,  T3t,  T4t,  T5t,  T9,   T0s]
+    # labels = ["[0]", "[2t]", "[3t]",
+    #           "[4t]", "[5t]", "[9]", ""]
 
     fig_ts = go.Figure()
     # Área del ciclo

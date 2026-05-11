@@ -108,8 +108,19 @@ class Turbine(Component):
 
         return t_out, p_out, s, A
 class Postcombustor(Component):
-    def calculate(self, t_in, p_in):
-        return t_in, p_in
+    def calculate(self, t_in, p_in, s_in, t_pc, G):
+
+        g = self.gamma
+
+        t_out = t_pc
+        p_out = p_in
+
+        s = s_in + self.cp * np.log(t_out / t_in) - self.R * np.log(p_out / p_in)
+
+        exp = (g + 1) / (2 * (g - 1))
+        A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) * ((g + 1) / 2)**exp
+
+        return t_out, p_out, s, A
 
 
 class Nozzle(Component):
@@ -236,7 +247,6 @@ class OneSpoolEngine:
         self.comp = Compressor()
         self.cc   = CombustionChamber()
         self.turb = Turbine()
-        self.pc   = Postcombustor()
         self.nozz = Nozzle()
 
     def simulate(self, T_0, P_0, mach, G, pi_23, tit,
@@ -264,7 +274,6 @@ class OneSpoolEngine:
         T_3t, P_3t, S_3, W_c    = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
-        T_7t, P_7t         = self.pc.calculate(T_5t, P_5t)
         T_9, P_9, S_9, V_jet, A_8    = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G)
 
         df = _fill_df(
@@ -278,6 +287,8 @@ class OneSpoolEngine:
         r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=pi_23, A_8=A_8,
                   P_9= P_9, Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_0/1000)
+        r["A8"]          = A_8
+        r["A8_PC"]       = A_8
         r["df"]          = df
         r["engine_type"] = "OneSpoolEngine"
         r["tit_limit"]   = TIT_LIMIT
@@ -285,58 +296,62 @@ class OneSpoolEngine:
         return r
 
 
-class TwinSpoolEngine:
-    """Turbojet bieje: LPC → HPC → Cámara → HPT → LPT → Tobera."""
+class OneSpoolEngine_PC:
+    """Turbojet monoeje: Difusor → Compresor → Cámara → Turbina → Postcombustor → Tobera."""
 
     def __init__(self):
-        self.dif           = Difussor()
-        self.lp_compressor = Compressor()
-        self.hp_compressor = Compressor()
-        self.cc            = CombustionChamber()
-        self.hp_turbine    = Turbine()
-        self.lp_turbine    = Turbine()
-        self.pc            = Postcombustor()
-        self.nozz          = Nozzle()
+        self.dif  = Difussor()
+        self.comp = Compressor()
+        self.cc   = CombustionChamber()
+        self.turb = Turbine()
+        self.pc   = Postcombustor()
+        self.nozz = Nozzle()
 
-    def simulate(self, T_0, P_0, mach, G, pi_lpc, pi_hpc, tit,
-                 eta_dif=None, eta_lpc=None, eta_hpc=None, eta_cc=None,
-                 eta_lpt=None, eta_hpt=None, eta_noz=None):
-        if eta_dif is not None: self.dif.eta            = eta_dif
-        if eta_lpc is not None: self.lp_compressor.eta  = eta_lpc
-        if eta_hpc is not None: self.hp_compressor.eta  = eta_hpc
-        if eta_cc  is not None: self.cc.eta             = eta_cc
-        if eta_lpt is not None: self.lp_turbine.eta     = eta_lpt
-        if eta_hpt is not None: self.hp_turbine.eta     = eta_hpt
-        if eta_noz is not None: self.nozz.eta           = eta_noz
+    def simulate(self, T_0, P_0, mach, G, pi_23, tit, t_pc,
+                 eta_dif=None, eta_c=None, eta_cc=None,
+                 eta_t=None, eta_noz=None):
+        """
+        Parámetros
+        ----------
+        T_amb, P_amb : condiciones estáticas de entrada [K, Pa]
+        mach         : número de Mach de vuelo
+        G            : flujo másico [kg/s]
+        pi_23        : relación de presiones del compresor
+        tit          : temperatura de entrada a turbina [K]
+        eta_c, eta_t : rendimientos isentrópicos (opcional, sobreescribe __init__)
+        """
+        if eta_dif is not None: self.dif.eta  = eta_dif
+        if eta_c   is not None: self.comp.eta = eta_c
+        if eta_cc  is not None: self.cc.eta   = eta_cc
+        if eta_t   is not None: self.turb.eta = eta_t
+        if eta_noz is not None: self.nozz.eta = eta_noz
 
         V0 = mach * speed_of_sound(T_0)
 
-        T_2t,  P_2t           = self.dif.calculate(T_0, P_0, mach)
-        T_25t, P_25t, W_lpc   = self.lp_compressor.calculate(T_2t,  P_2t,  pi_lpc)
-        T_3t,  P_3t,  W_hpc   = self.hp_compressor.calculate(T_25t, P_25t, pi_hpc)
-        T_4t,  P_4t, FAR           = self.cc.calculate(T_3t, P_3t, tit)
-        T_45t, P_45t, A_4      = self.hp_turbine.calculate(T_4t,  P_4t,  W_hpc)
-        T_5t,  P_5t, A_45      = self.lp_turbine.calculate(T_45t, P_45t, W_lpc)
-        T_7t,  P_7t           = self.pc.calculate(T_5t, P_5t)
-        T_9,   P_9,   V_jet, A_8   = self.nozz.calculate(T_7t, P_7t, T_0, P_0, G)
+        T_2t, P_2t, S_2              = self.dif.calculate(T_0, P_0, mach)
+        T_3t, P_3t, S_3, W_c         = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
+        T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
+        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
+        T_7t, P_7t, S_7, A_8         = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G)
+        T_9, P_9, S_9, V_jet, A_8pc  = self.nozz.calculate(T_7t, P_7t, S_7, T_0, P_0, G)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,2.5,3,4,4.5,5,6,7,8,9], columns=['T','P']),
             locals(),
-            {0:"0", 2:"2t", 2.5:"25t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 9:"9"},
+            {0:"0", 2:"2t", 3:"3t", 4:"4t", 5:"5t", 9:"9"},
         )
 
-        opr = pi_lpc * pi_hpc
-        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=opr, A_8=A_8,
-                  P_9=P_9, Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
-                  Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_0/1000)
-        
         stations = _build_stations(locals())
-        
+
+        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=pi_23, A_8=A_8pc,
+                  P_9= P_9, Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
+                  Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_0/1000)
+        r["A8"]          = A_8
+        r["A8_PC"]       = A_8pc
         r["df"]          = df
-        r["opr"]         = opr
-        r["engine_type"] = "TwinSpoolEngine"
+        r["engine_type"] = "OneSpoolEngine"
         r["tit_limit"]   = TIT_LIMIT
+        r["stations"]  = stations
         return r
 
 
@@ -490,7 +505,7 @@ class OneSpoolTurboprop:
 
 def sweep_tit(engine_type, base_params, n=50):
     """Barrido de TIT → lista de (tit, thrust_kN)."""
-    tit_max = {"OneSpoolEngine":1700, "TwinSpoolEngine":1900,
+    tit_max = {"OneSpoolEngine":1700, "OneSpoolEngine_PC":1900,
                "SingleFlowTurbofan":2000, "OneSpoolTurboprop":1700}.get(engine_type, 1800)
     results, cls = [], _engine_class(engine_type)
     for t in np.linspace(900, tit_max, n):
@@ -529,7 +544,7 @@ def sweep_bpr(base_params, n=50):
 
 def _engine_class(engine_type):
     return {"OneSpoolEngine":    OneSpoolEngine,
-            "TwinSpoolEngine":   TwinSpoolEngine,
+            "OneSpoolEngine_PC":   OneSpoolEngine_PC,
             "SingleFlowTurbofan":SingleFlowTurbofan,
             "OneSpoolTurboprop": OneSpoolTurboprop}[engine_type]
 
@@ -544,8 +559,8 @@ if __name__ == "__main__":
     r1 = OneSpoolEngine().simulate(T, P, 0, 30, 10, 1400, eta_c=1, eta_t=1)
     print(f"Monoeje   — F={r1['thrust_kN']:.2f} kN  TSFC={r1['TSFC_mg']:.2f} mg/Ns")
 
-    # r2 = TwinSpoolEngine().simulate(T, P, 0, 20, 1.6, 12, 1450)
-    # print(f"Bieje     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
+    r2 = OneSpoolEngine_PC().simulate(T, P, 0, 30, 10, 1400, 1700)
+    print(f"Postcombustor     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
 
     r3 = SingleFlowTurbofan().simulate(T, P, 0, 90, 25, 1500, 1.4, 0.8)
     print(f"Turbofan  — F={r3['thrust_kN']:.2f} kN  TSFC={r3['TSFC_mg']:.2f} mg/Ns")

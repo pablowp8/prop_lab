@@ -219,7 +219,7 @@ ENGINE_CONFIGS = {
             "eta_t":p["os_et"],  "eta_noz":p["os_enoz"],
         },
     },
-    "TwinSpoolEngine": {
+    "OneSpoolEngine_PC": {
         "label":    "Monoeje + Postcombustor",
         "subtitle": "Single Spool Turbojet + Postcombustor",
         "color":    "#b83232",
@@ -230,36 +230,32 @@ ENGINE_CONFIGS = {
         ],
         "sliders_diseno": [
             ("ts_tit",   "T\u2084\u209C [K]",     800, 1900, 1450,  5),
-            ("ts_pilpc", "\u03C0\u2095 (LP)",    1.1,    6,  1.6, 0.1),
-            ("ts_pihpc", "\u03C0\u2090 (HP)",      2,   25,   12, 0.1),
+            ("ts_tpc",   "T\u2087\u209C [K]",     1200, 1900, 1700,  5),
+            ("ts_pi",   "\u03C0\u2082\u2083",  2,   30,   18,  0.1),
             ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
             ("ts_edif",  "\u03B7 difusor",     0.6, 1, 1, 0.01),
-            ("ts_elpc",  "\u03B7 comp. LP",    0.6, 1, 1, 0.01),
-            ("ts_ehpc",  "\u03B7 comp. HP",    0.6, 1, 1, 0.01),
+            ("ts_ec",  "\u03B7 comp",    0.6, 1, 1, 0.01),
             ("ts_ecc",   "\u03B7 camara",      0.6, 1, 1, 0.01),
-            ("ts_ehpt",  "\u03B7 turb. HP",    0.6, 1, 1, 0.01),
-            ("ts_elpt",  "\u03B7 turb. LP",    0.6, 1, 1, 0.01),
+            ("ts_et",  "\u03B7 turb",    0.6, 1, 1, 0.01),
             ("ts_enoz",  "\u03B7 tobera",      0.6, 1, 1, 0.01),
 
         ],
-        "engine_cls": sim.TwinSpoolEngine,
-        "runner": lambda p: sim.TwinSpoolEngine().simulate(
+        "engine_cls": sim.OneSpoolEngine_PC,
+        "runner": lambda p: sim.OneSpoolEngine_PC().simulate(
             p["ts_t0"], p["ts_p0"] * 1000,
             p["ts_mach"], p["ts_G"],
-            p["ts_pilpc"], p["ts_pihpc"], p["ts_tit"],
-            eta_dif=p["ts_edif"], eta_lpc=p["ts_elpc"], eta_hpc=p["ts_ehpc"],
-            eta_cc=p["ts_ecc"], eta_lpt=p["ts_elpt"], eta_hpt=p["ts_ehpt"],
-            eta_noz=p["ts_enoz"],
+            p["ts_pi"], p["ts_tit"], p["ts_tpc"],
+            eta_dif=p["ts_edif"], eta_c=p["ts_ec"], eta_cc=p["ts_ecc"], 
+            eta_t=p["ts_et"], eta_noz=p["ts_enoz"],
         ),
         "sweep_base": lambda p: {
             "T_amb": p["ts_t0"], "P_amb": p["ts_p0"] * 1000,
             "mach":p["ts_mach"],    "G":p["ts_G"],
-            "pi_lpc":p["ts_pilpc"], "pi_hpc":p["ts_pihpc"], "tit":p["ts_tit"],
-            "eta_dif":p["ts_edif"], "eta_lpc":p["ts_elpc"], "eta_hpc":p["ts_ehpc"],
-            "eta_cc":p["ts_ecc"],   "eta_lpt":p["ts_elpt"], "eta_hpt":p["ts_ehpt"],
-            "eta_noz":p["ts_enoz"],
+            "pi_23":p["ts_pi"], "tit":p["ts_tit"], "tpc":p["ts_tpc"],
+            "eta_dif":p["ts_edif"], "eta_c":p["ts_ec"], "eta_cc":p["ts_ecc"],   
+            "eta_t":p["ts_et"], "eta_noz":p["ts_enoz"],
         },
     },
     "SingleFlowTurbofan": {
@@ -980,7 +976,7 @@ def build_engine_diagram(engine_type: str, df=None):
     """
     Retorna dcc.Graph con el esquema del motor.
 
-    engine_type : "OneSpoolEngine" | "TwinSpoolEngine" |
+    engine_type : "OneSpoolEngine" | "OneSpoolEngine_PC" |
                   "SingleFlowTurbofan" | "OneSpoolTurboprop"
     df          : DataFrame con indice = station_id, columnas T [K] y P [Pa]
                   Puede ser None para uso estatico en las tarjetas del menu.
@@ -1686,8 +1682,8 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     # Puntos del ciclo (cierra en 0s)
     ss = [S0s,  S2t,  S3t,  S4t,  S5t,  S9,   S0s]
     Ts = [T0s,  T2t,  T3t,  T4t,  T5t,  T9,   T0s]
-    labels = ["[0] Entrada", "[2t] Difusor", "[3t] Compresor",
-              "[4t] TIT", "[5t] Turbina", "[9] Tobera", ""]
+    labels = ["[0]", "[2t]", "[3t]",
+              "[4t]", "[5t]", "[9]", ""]
 
     fig_ts = go.Figure()
     # Área del ciclo

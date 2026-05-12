@@ -75,15 +75,32 @@ PARAM_META = {
     # 'm_bypass':    {'label': 'ṁ bypass',     'unit': 'kg/s',      'color': '#97C459', 'dec': 2},
     # 'shaft_MW':    {'label': 'P eje',        'unit': 'MW',        'color': '#E24B4A', 'dec': 2},
     # 'EGT':         {'label': 'EGT',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
-    'T0_K':        {'label': 'T0',           'unit': 'K',         'color': '#5DCAA5', 'dec': 1},
-    'Tt3_K':       {'label': 'T3t',          'unit': 'K',         'color': '#D85A30', 'dec': 1},
-    'Tt4_K':       {'label': 'T4t',          'unit': 'K',         'color': '#7F77DD', 'dec': 0},
-    'Tt5_K':       {'label': 'T5t',          'unit': 'K',         'color': '#378ADD', 'dec': 1},
-    'Pt0_kPa':     {'label': 'P0t',          'unit': 'kPa',       'color': '#534AB7', 'dec': 2},
-    'Pt3_kPa':     {'label': 'P3t',          'unit': 'kPa',       'color': '#993556', 'dec': 2},
-    'P0_kPa':      {'label': 'P0',           'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
     # 'opr':         {'label': 'OPR (π23)',    'unit': '–',         'color': '#534AB7', 'dec': 2},
     # 'tit_limit':   {'label': 'TIT límite',   'unit': 'K',         'color': '#888780', 'dec': 0},
+    'T_0':         {'label': 'T0',           'unit': 'K',         'color': '#5DCAA5', 'dec': 1},
+    'T_2t':        {'label': 'T2t',          'unit': 'K',         'color': '#185FA5', 'dec': 1},
+    'T_25t':       {'label': 'T25t',         'unit': 'K',         'color': '#185FA5', 'dec': 1},
+    'T_3t':        {'label': 'T3t',          'unit': 'K',         'color': '#D85A30', 'dec': 1},
+    'T_4t':        {'label': 'T4t',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T_45t':       {'label': 'T45t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T_5t':        {'label': 'T5t',          'unit': 'K',         'color': '#7F77DD', 'dec': 1},
+    'T_7t':        {'label': 'T7t',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T_9':         {'label': 'T9',           'unit': 'K',         'color': '#0F6E56', 'dec': 1},
+    'T_12t':       {'label': 'T12t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T_13t':       {'label': 'T13t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
+    'T_19':        {'label': 'T19',          'unit': 'K',         'color': '#0F6E56', 'dec': 1},
+    'P_0':         {'label': 'P0',           'unit': 'kPa',       'color': '#5DCAA5', 'dec': 2},
+    'P_2t':        {'label': 'P2t',          'unit': 'kPa',       'color': '#185FA5', 'dec': 2},
+    'P_25t':       {'label': 'P25t',         'unit': 'kPa',       'color': '#185FA5', 'dec': 2},
+    'P_3t':        {'label': 'P3t',          'unit': 'kPa',       'color': '#D85A30', 'dec': 2},
+    'P_4t':        {'label': 'P4t',          'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
+    'P_45t':       {'label': 'P45t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
+    'P_5t':        {'label': 'P5t',          'unit': 'kPa',       'color': '#7F77DD', 'dec': 2},
+    'P_7t':        {'label': 'P7t',          'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
+    'P_9':         {'label': 'P9',           'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
+    'P_12t':       {'label': 'P12t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
+    'P_13t':       {'label': 'P13t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
+    'P_19':        {'label': 'P19',          'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
 }
 
 # Estado interno del histórico
@@ -1294,7 +1311,7 @@ sim_screen = html.Div([
                             dcc.Checklist(
                                 id="tlm-checklist",
                                 options=[{"label": v["label"], "value": k} for k, v in PARAM_META.items()],
-                                value=["Tt3_K"],
+                                value=[],
                                 labelStyle={
                                     "display":"flex","flexDirection":"row-reverse",
                                     "justifyContent":"space-between","alignItems":"center",
@@ -1321,6 +1338,7 @@ sim_screen = html.Div([
             html.Div(html.Table(id="tele-table", className="tele-table"),
                      style={"display":"none"}),
             dcc.Store(id="telemetry-data-store"),
+            dcc.Store(id="tlm-visible-keys"),
         ], id="wrap-tlm",
                 style={**PANEL_GRAPHS, "flex":"1 1 0", "minHeight":0,
                       "display":"flex", "flexDirection":"column",
@@ -1487,6 +1505,18 @@ def navigate(*args):
 # Cada tick del Interval (o cada cambio de selección / cambio en el Store)
 # muestrea la r vigente y refresca la traza. La función externa mantiene su
 # propio buffer histórico, así que aquí sólo le pasamos el dict.
+
+@app.callback(
+    Output("tlm-checklist", "options"),
+    Input("tlm-visible-keys", "data"),
+)
+def actualizar_opciones_telemetria(visible_keys):
+    if not visible_keys:
+        return []
+    # Mantiene el orden de visible_keys (no el de PARAM_META)
+    return [{"label": PARAM_META[k]["label"], "value": k}
+            for k in visible_keys if k in PARAM_META]
+
 @app.callback(
     Output("graph-tlm",   "figure"),
     Output("tlm-summary", "children"),
@@ -1571,6 +1601,7 @@ def update_labels(*vals):
     Output("other-diagram",    "children"),
     Output("other-diagram",    "style"),
     Output("telemetry-data-store", "data"),
+    Output("tlm-visible-keys",     "data"),
     Input("active-engine", "data"),
     Input("eta-override-store",  "data"),
     *[Input(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
@@ -1607,7 +1638,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
                 ef, ef, ef, et, msg_str, {"display":"block"},
                 ef_blank, {"height":"100%","width":"100%","display":"none"},
                 None, {"display":"none"},
-                None]   # telemetry-data-store: sin datos en error
+                None, []]   # telemetry-data-store: sin datos en error
 
     try:
         r = cfg["runner"](p)
@@ -1665,18 +1696,20 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         and dict_st[est].get('S') is not None
         and dict_st[est].get('P') is not None
     ]
-    ss = [dict_st[e]['S'] for e in estaciones]
-    Ts = [dict_st[e]['T'] for e in estaciones]
-    Ps = [dict_st[e]['P']/1000 for e in estaciones]
-    labels = [f"[{e}t]" for e in estaciones]
+    S_active = [dict_st[e]['S'] for e in estaciones]
+    T_active = [dict_st[e]['T'] for e in estaciones]
+    P_active = [dict_st[e]['P']/1000 for e in estaciones]
+    labels_active = [f"[{e}t]" for e in estaciones]
+    for e in range(len(labels_active)):
+        if labels_active[e] in ['[0t]', '[19t]', '[9t]']:
+            labels_active[e] = labels_active[e].replace('t', '')
 
+    ss = S_active.copy()
     ss.append(ss[0])
+    Ts = T_active.copy()
     Ts.append(Ts[0])
+    labels = labels_active.copy()
     labels.append(labels[0])
-
-    for e in range(len(labels)):
-        if labels[e] in ['[0t]', '[19t]', '[9t]']:
-            labels[e] = labels[e].replace('t', '')
 
     # T0s,  P0s, S0s  = r["T0_K"],  r["P0_kPa"], 0   # estática entrada (0)
     # T0t,  P0t, S0t   = _st(0)                       # estación 0 en df = 2t (difusor entrada)
@@ -1974,14 +2007,49 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     # Subconjunto serializable de r para el Store de telemetría
     # (la función update_telemetry_figure ignora claves no numéricas, pero
     #  un dcc.Store sólo acepta JSON, así que filtramos aquí)
+
+    if engine_type == "OneSpoolEngine":
+        visible_keys = []
+    elif engine_type == "OneSpoolEngine_PC":
+        visible_keys = []
+    elif engine_type == "TurboFan":
+        visible_keys = []
+    elif engine_type == "TurboPropEngine":
+        visible_keys = []
+    else:
+        visible_keys = list(PARAM_META.keys())   # fallback: muéstralo todo
+
     tlm_data = {k: v for k, v in r.items()
                 if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    
+    # Aplanar sólo las estaciones de la whitelist
+    stations = r.get("stations") or {}
+    for st_id in estaciones:
+        st_data = stations.get(st_id)
+        if not isinstance(st_data, dict):
+            continue
+        T = st_data.get("T")
+        P = st_data.get("P")
+        if isinstance(T, (int, float)) and not isinstance(T, bool):
+            tlm_data[f"{st_id}_T"] = float(T)
+        if isinstance(P, (int, float)) and not isinstance(P, bool):
+            tlm_data[f"{st_id}_P_kPa"] = float(P) / 1000.0
+
+    for i_active in range(len(labels_active)):
+        tlm_T_id = f"T_{labels_active[i_active].strip('[]')}"
+        visible_keys.append(tlm_T_id)
+        tlm_data[tlm_T_id] = float(T_active[i_active])
+    
+    for i_active in range(len(labels_active)):
+        tlm_P_id = f"P_{labels_active[i_active].strip('[]')}"
+        visible_keys.append(tlm_P_id)
+        tlm_data[tlm_P_id] = float(P_active[i_active])
 
     return [metrics[0], metrics[1], metrics[2], metrics[3], metrics[4], metrics[5], metrics[6],
             fig_ts, fig_gauge_thrust, fig_gauge_epr,
             table, alert_msg, alert_style,
             onespool_fig, onespool_style, other_children, other_style,
-            tlm_data]
+            tlm_data, visible_keys]
 
 
 # ── Navegación sim ↔ actuaciones ─────────────────────────────────────────────

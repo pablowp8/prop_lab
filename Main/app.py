@@ -1550,7 +1550,7 @@ def update_telemetry(_n, selected, data):
                     legend=dict(orientation="v",
                     yanchor="top", y=0.9,
                     xanchor="left", x=1.02,
-                    font=dict(size=8, family=C["mono"], color=C["dim"]),
+                    font=dict(size=12, family=C["mono"], color=C["dim"]),
                     bgcolor="rgba(0,0,0,0)"),
         margin=dict(l=40, r=100, t=20, b=30))
     return fig, f"Variables ({len(selected)}) ▾"

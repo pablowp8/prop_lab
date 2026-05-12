@@ -252,12 +252,11 @@ ENGINE_CONFIGS = {
             ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
-            ("ts_edif",  "\u03B7 difusor",     0.6, 1, 1, 0.01),
-            ("ts_ec",  "\u03B7 comp",    0.6, 1, 1, 0.01),
-            ("ts_ecc",   "\u03B7 camara",      0.6, 1, 1, 0.01),
-            ("ts_et",  "\u03B7 turb",    0.6, 1, 1, 0.01),
-            ("ts_enoz",  "\u03B7 tobera",      0.6, 1, 1, 0.01),
-
+            ("ts_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
+            ("ts_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1, 0.01),
+            ("ts_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
+            ("ts_et",    "\u03B7\u2084\u2085",    0.6, 1, 1, 0.01),
+            ("ts_enoz",  "\u03B7\u2085\u2088",     0.6, 1, 1, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine_PC,
         "runner": lambda p: sim.OneSpoolEngine_PC().simulate(
@@ -292,13 +291,13 @@ ENGINE_CONFIGS = {
             ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
         ],
         "sliders_comp": [
-            ("tf_edif",  "\u03B7 difusor",   0.6, 1, 1, 0.01),
-            ("tf_efan",  "\u03B7 fan",       0.6, 1, 1.0,  0.01),
-            ("tf_ec",    "\u03B7 compresor", 0.6, 1, 1.0,  0.01),
-            ("tf_ecc",   "\u03B7 camara",    0.6, 1, 1, 0.01),
-            ("tf_ehpt",  "\u03B7 turb. HP",  0.6, 1, 1.0,  0.01),
-            ("tf_elpt",  "\u03B7 turb. LP",  0.6, 1, 1.0,  0.01),
-            ("tf_enoz",  "\u03B7 tobera",    0.6, 1, 1, 0.01),
+            ("tf_edif",  "\u03B7\u2080\u2082",   0.6, 1, 1, 0.01),
+            ("tf_efan",  "\u03B7\u2081\u2082\u2081\u2083",       0.6, 1, 1.0,  0.01),
+            ("tf_ec",    "\u03B7\u2082\u2083", 0.6, 1, 1.0,  0.01),
+            ("tf_ecc",   "\u03B7\u2083\u2084",    0.6, 1, 1, 0.01),
+            ("tf_ehpt",  "\u03B7\u2084\u2084\u2085",  0.6, 1, 1.0,  0.01),
+            ("tf_elpt",  "\u03B7\u2084\u2085\u2085",  0.6, 1, 1.0,  0.01),
+            ("tf_enoz",  "\u03B7\u2085\u2089",    0.6, 1, 1, 0.01),
 
         ],
         "engine_cls": sim.SingleFlowTurbofan,
@@ -339,12 +338,12 @@ ENGINE_CONFIGS = {
             ("tp_etam",  "\u03B7 mecanica",   0.5, 1, 1, 0.01),
         ],
         "sliders_comp": [
-            ("tp_edif",  "\u03B7 difusor",    0.6, 1, 1, 0.01),
-            ("tp_ec",    "\u03B7 compresor",  0.6, 1, 1.0,  0.01),
-            ("tp_ecc",   "\u03B7 camara",     0.6, 1, 1, 0.01),
-            ("tp_ehpt",  "\u03B7 turb. HP",   0.6, 1, 1.0,  0.01),
-            ("tp_elpt",  "\u03B7 turb. LP",   0.6, 1, 1.0,  0.01),
-            ("tp_enoz",  "\u03B7 tobera",     0.6, 1, 1, 0.01),
+            ("tp_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
+            ("tp_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1.0,  0.01),
+            ("tp_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
+            ("tp_ehpt",  "\u03B7\u2084\u2084\u2085",   0.6, 1, 1.0,  0.01),
+            ("tp_elpt",  "\u03B7\u2084\u2085\u2085",   0.6, 1, 1.0,  0.01),
+            ("tp_enoz",  "\u03B7\u2085\u2089",     0.6, 1, 1, 0.01),
 
         ],
         "engine_cls": sim.OneSpoolTurboprop,
@@ -391,10 +390,10 @@ ALL_LABEL_IDS = [
 def make_slider(sid, label, mn, mx, dfl, stp):
     return html.Div([
         html.Div([
-            html.Span(label, style={"fontSize":"0.75rem","color":C["accent"],   # Variable
+            html.Span(label, style={"fontSize":"0.9vw","color":C["accent"],   # Variable
                                     "fontFamily":C["mono"]}),
             html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],  # Valor numérico
-                                               "fontSize":"0.75rem","color":C["accent"]}),
+                                               "fontSize":"0.9vw","color":C["accent"]}),
         ], style={"display":"flex","justifyContent":"space-between","marginBottom":"-6px"}),
         dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
                    marks=None, tooltip={"always_visible":False}, className="mb-1"),
@@ -404,15 +403,15 @@ def make_slider(sid, label, mn, mx, dfl, stp):
 def metric_card(label, mid, unit, cls=""):
     return html.Div([
         html.Div(label, className="metric-label",
-                 style={"fontSize":"0.55rem","marginBottom":"1px",
-                        "fontFamily":"Arial, sans-serif"}),
+                 style={"fontSize":"0.7vw","marginBottom":"1px"}),
         html.Div([
             html.Span("--", id=f"m-{mid}", className="metric-val",
-                      style={"fontSize":"0.82rem"}),
+                      style={"fontSize":"1vw"}),
             html.Span(unit, className="metric-unit",
-                      style={"fontSize":"0.52rem"}),
+                      style={"fontSize":"0.9vw","marginLeft":"5px"}),
         ]),
-    ], className=f"metric-card {cls}", style={"padding":"3px 6px","marginBottom":"3px"})
+    ], className=f"metric-card {cls}",
+       style={"padding":"3px 6px","marginBottom":"1px"})
 
 
 
@@ -424,7 +423,7 @@ def _rgba(hex_color, alpha=0.12):
 
 def _plot_layout(title):
     return dict(
-        title=dict(text=title, font=dict(color=C["dim"],size=11,family=C["head"]),
+        title=dict(text=title, font=dict(color=C["dim"],size=9,family=C["head"]),
                    x=0.01, y=0.97),
         plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
         font=dict(color=C["text"], family=C["mono"]),
@@ -863,7 +862,12 @@ def _build_onespool(df):
     return dcc.Graph(
         id="onespool-diagram",
         figure=fig,
-        config={"displayModeBar": False, "staticPlot": False},
+        config={"displayModeBar": True,
+                "modeBarButtonsToAdd": ["downloadSvg"],
+                "modeBarButtonsToRemove": ["zoom2d","pan2d","select2d","lasso2d",
+                    "zoomIn2d","zoomOut2d","autoScale2d","resetScale2d","hoverClosestCartesian",
+                    "hoverCompareCartesian","toggleSpikelines"],
+                "toImageButtonOptions": {"format":"svg","filename":"monoeje_schema"}},
         style={"height": "100%", "width": "100%"},
     )
 
@@ -920,7 +924,548 @@ def _station_orig(S, A, x, label, t_val, p_val, cy=0.5):
         ))
 
 
+def _build_onespool_pc(df):
+    """Monoeje + Postcombustor: igual que monoeje pero con estación 7 (postcombustor) en naranja."""
+    S, A = [], []
+
+    # ── Zona fría: difusor + compresor (azul) ─────────────────────────────────
+    S.append(dict(type="path",
+        path=("M 20,0.15 C 32,0.10 58,0.13 110,0.13 L 260,0.22 L 260,0.78 L 110,0.87 "
+              "C 58,0.87 32,0.9 20,0.85 Z"),
+        fillcolor=_rgba("#4a90d9", 0.20), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Zona cámara+turbina (rojo-naranja) ────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 260,0.22 L 370,0.22 L 370,0.78 L 260,0.78 Z",
+        fillcolor=_rgba("#e28800", 0.20), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 370,0.22 L 470,0.1578 L 470,0.8522 L 370,0.78 Z",
+        fillcolor=_rgba("#b83232", 0.20), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Zona postcombustor (naranja brillante) ────────────────────────────────
+    S.append(dict(type="path",
+        path="M 470,0.1578 L 560,0.16 L 560,0.84 L 470,0.8522 Z",
+        fillcolor=_rgba("#ff6600", 0.28), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Zona tobera (morado) ──────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path=("M 560,0.16 C 590,0.28 610,0.30 630,0.30 L 630,0.70 "
+              "C 610,0.70 590,0.72 560,0.84 Z"),
+        fillcolor=_rgba("#b83232", 0.20), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Bandas 3D (mismo patrón que monoeje) ──────────────────────────────────
+    # Superior izq
+    S.append(dict(type="path",
+        path=("M 20,0.12 C 32,0.06 58,0.08 110,0.10 L 260,0.19 L 260,0.22 L 110,0.13 C 58,0.13 32,0.10 20,0.15 Z"),
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Inferior izq
+    S.append(dict(type="path",
+        path=("M 20,0.88 C 32,0.94 58,0.9 110,0.90 L 260,0.81 L 260,0.78 L 110,0.87 C 58,0.87 32,0.9 20,0.85 Z"),
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Superior centro
+    S.append(dict(type="path",
+        path="M 260,0.19 L 370,0.19 L 470,0.1278 L 560,0.13 L 560,0.16 L 470,0.1578 L 370,0.22 L 260,0.22 Z",
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Inferior centro
+    S.append(dict(type="path",
+        path="M 260,0.81 L 370,0.81 L 470,0.8722 L 560,0.87 L 560,0.84 L 470,0.8522 L 370,0.78 L 260,0.78 Z",
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Superior tobera
+    S.append(dict(type="path",
+        path="M 560,0.13 C 590,0.25 610,0.27 630,0.27 L 630,0.30 C 610,0.30 590,0.28 560,0.16 Z",
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Inferior tobera
+    S.append(dict(type="path",
+        path="M 560,0.87 C 590,0.75 610,0.73 630,0.73 L 630,0.70 C 610,0.70 590,0.72 560,0.84 Z",
+        fillcolor=_rgba("#888888", 0.32), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+
+    # ── Contornos exteriores e interiores ─────────────────────────────────────
+    S.append(dict(type="path",
+        path=("M 20,0.12 C 32,0.06 58,0.10 110,0.10 L 260,0.19 L 370,0.19 L 470,0.1278 "
+              "L 560,0.13 C 590,0.25 610,0.27 630,0.27"),
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path=("M 20,0.15 C 32,0.10 58,0.13 110,0.13 L 260,0.22 L 370,0.22 L 470,0.1578 "
+              "L 560,0.16 C 590,0.28 610,0.30 630,0.30"),
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.4)))
+    S.append(dict(type="line", x0=630, x1=630, y0=0.27, y1=0.30, line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20,  x1=20,  y0=0.12, y1=0.15, line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path=("M 20,0.88 C 32,0.94 58,0.90 110,0.90 L 260,0.81 L 370,0.81 L 470,0.8722 "
+              "L 560,0.87 C 590,0.75 610,0.73 630,0.73"),
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path=("M 20,0.85 C 32,0.90 58,0.87 110,0.87 L 260,0.78 L 370,0.78 L 470,0.8422 "
+              "L 560,0.84 C 590,0.72 610,0.70 630,0.70"),
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.4)))
+    S.append(dict(type="line", x0=630, x1=630, y0=0.7, y1=0.73, line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20,  x1=20,  y0=0.85, y1=0.88, line=dict(color="#2a2a2a", width=1.4)))
+
+    # ── Ojiva delantera ───────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.50 C 33,0.44 56,0.42 90,0.41 L 90,0.59 C 56,0.58 33,0.56 20,0.50 Z",
+        fillcolor=_rgba("#aaaaaa", 0.65), line=dict(color="#444444", width=1.6), layer="above"))
+    S.append(dict(type="path",
+        path="M 22,0.50 C 35,0.46 57,0.44 84,0.43 L 84,0.46 C 57,0.47 35,0.48 22,0.50 Z",
+        fillcolor=_rgba("#ffffff", 0.40), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    # Ojiva trasera (tobera)
+    S.append(dict(type="path",
+        path="M 630,0.50 C 617,0.44 594,0.42 560,0.41 L 560,0.59 C 594,0.58 617,0.56 630,0.50 Z",
+        fillcolor=_rgba("#aaaaaa", 0.65), line=dict(color="#444444", width=1.6), layer="above"))
+
+    # ── Eje mecánico ──────────────────────────────────────────────────────────
+    S.append(dict(type="rect", x0=90, x1=560, y0=0.447, y1=0.553,
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="above"))
+    S.append(dict(type="rect", x0=120, x1=464, y0=0.453, y1=0.547,
+        fillcolor=_rgba("#777777", 0.75), line=dict(color="#444444", width=1.1), layer="above"))
+
+    # ── Palas compresor ───────────────────────────────────────────────────────
+    for xi in range(118, 258, 16):
+        t = (xi - 110) / (260 - 110)
+        y_top = 0.13 + t * 0.09; y_bot = 0.87 - t * 0.09
+        S.append(dict(type="line", x0=xi, x1=xi+6, y0=0.553, y1=y_top, line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+        S.append(dict(type="line", x0=xi, x1=xi+6, y0=0.447, y1=y_bot, line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+
+    # ── Cámara de combustión ──────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 260,0.30 L 260,0.70 L 276,0.60 L 354,0.60 L 370,0.70 L 370,0.30 L 354,0.4, L 276,0.4 Z",
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="below"))
+
+    # ── Palas turbina ─────────────────────────────────────────────────────────
+    for xi in range(377, 472, 16):
+        t = (xi - 370) / (470 - 370)
+        y_top = 0.22 - t * 0.06; y_bot = 0.78 + t * 0.06
+        S.append(dict(type="line", x0=xi+6, x1=xi, y0=0.553, y1=y_top, line=dict(color=_rgba("#b83232",0.78), width=4)))
+        S.append(dict(type="line", x0=xi+6, x1=xi, y0=0.447, y1=y_bot, line=dict(color=_rgba("#b83232",0.78), width=4)))
+
+    # ── Zona postcombustor (llamas) ───────────────────────────────────────────
+    #for xi in range(478, 552, 18):
+     #   S.append(dict(type="line", x0=xi, x1=xi+8, y0=0.50, y1=0.30,
+     #       line=dict(color=_rgba("#ff6600", 0.55), width=6)))
+     #   S.append(dict(type="line", x0=xi+4, x1=xi+12, y0=0.50, y1=0.70,
+      #      line=dict(color=_rgba("#ffaa00", 0.45), width=5)))
+
+    # ── Estaciones ────────────────────────────────────────────────────────────
+    STATIONS_PC = [
+        (20,  "1"),
+        (110, "2"),
+        (260, "3"),
+        (370, "4"),
+        (450, "5"),
+        (560, "7"),   # ← postcombustor salida
+        (630, "9"),
+    ]
+    ST_Y0, ST_Y1 = 0.02, 0.98
+    for sx, slbl in STATIONS_PC:
+        clr = C["border"]
+        S.append(dict(type="line", x0=sx, x1=sx, y0=ST_Y0, y1=ST_Y1,
+            line=dict(color=clr, width=0.8, dash="dot")))
+        A.append(dict(x=sx, y=ST_Y0-0.02, text=f"<b>{slbl}</b>", showarrow=False,
+            font=dict(size=9, color=C["dim"], family="mono"),
+            xref="x", yref="y", yanchor="top"))
+
+    fig = go.Figure()
+    fig.update_layout(shapes=S, annotations=A,
+        plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
+        autosize=True, margin=dict(l=20,r=20,t=0,b=20),
+        xaxis=dict(domain=[0,1], range=[10,640], visible=False, fixedrange=True),
+        yaxis=dict(range=[0,1], visible=False, fixedrange=True),
+        showlegend=False)
+    return dcc.Graph(id="other-diagram-pc", figure=fig,
+        config={"displayModeBar": True, "modeBarButtonsToAdd": ["downloadSvg"],
+                "modeBarButtonsToRemove": ["zoom2d","pan2d","select2d","lasso2d",
+                    "zoomIn2d","zoomOut2d","autoScale2d","resetScale2d","hoverClosestCartesian",
+                    "hoverCompareCartesian","toggleSpikelines"],
+                "toImageButtonOptions": {"format":"svg","filename":"monoeje_pc_schema"}},
+        style={"height":"100%","width":"100%"})
+
+
+def _build_turbofan(df):
+    """Turbofan: flujo secundario con carcasa exterior, fan, estaciones 12/13/18."""
+    S, A = [], []
+
+    # ── Carcasa exterior (bypass) ─────────────────────────────────────────────
+    # La carcasa envuelve el motor hasta ~x=480, donde sale el bypass por 18
+    S.append(dict(type="path",
+        path=("M 20,0.04 C 40,0.02 90,0.03 130,0.04 "
+              "L 480,0.04 L 480,0.13 "
+              "C 530,0.20 570,0.24 600,0.26 L 600,0.30 "
+              "C 570,0.28 530,0.24 480,0.17 "
+              "L 480,0.96 "
+              "C 530,0.96 570,0.96 600,0.96 L 600,0.96 L 600,0.70 "
+              "C 570,0.72 530,0.76 480,0.83 "
+              "L 480,0.87 "
+              "C 530,0.80 570,0.76 600,0.74 "
+              "L 600,0.96 L 20,0.96 Z"),
+        fillcolor=_rgba("#4a90d9", 0.07), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Conducto bypass (entre carcasa externa y nucleo) ──────────────────────
+    # Zona bypass: y entre 0.04~0.19 (arriba) y 0.81~0.96 (abajo)
+    S.append(dict(type="path",
+        path="M 130,0.04 L 480,0.04 L 480,0.17 L 130,0.17 Z",
+        fillcolor=_rgba("#1a7a5a", 0.12), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 130,0.83 L 480,0.83 L 480,0.96 L 130,0.96 Z",
+        fillcolor=_rgba("#1a7a5a", 0.12), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Núcleo del motor (zona caliente) ─────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 130,0.19 C 150,0.17 200,0.17 240,0.18 L 380,0.22 L 380,0.78 L 240,0.82 C 200,0.83 150,0.83 130,0.81 Z",
+        fillcolor=_rgba("#4a90d9", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 240,0.18 L 370,0.22 L 370,0.78 L 240,0.82 Z",
+        fillcolor=_rgba("#e28800", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 370,0.22 L 470,0.16 L 470,0.84 L 370,0.78 Z",
+        fillcolor=_rgba("#b83232", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Tobera núcleo ─────────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 470,0.16 C 520,0.28 560,0.31 590,0.32 L 590,0.68 C 560,0.69 520,0.72 470,0.84 Z",
+        fillcolor=_rgba("#b83232", 0.16), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Bandas 3D carcasa exterior superior/inferior ──────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.02 C 40,0.00 90,0.01 130,0.02 L 480,0.02 L 480,0.04 L 130,0.04 C 90,0.03 40,0.02 20,0.04 Z",
+        fillcolor=_rgba("#888888", 0.35), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    S.append(dict(type="path",
+        path="M 20,0.96 C 40,0.98 90,0.99 130,0.98 L 480,0.98 L 480,0.96 L 130,0.96 C 90,0.97 40,0.98 20,0.96 Z",
+        fillcolor=_rgba("#888888", 0.35), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+
+    # ── Contorno carcasa exterior ─────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.02 C 40,0.00 90,0.01 130,0.02 L 480,0.02",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path="M 20,0.04 C 40,0.02 90,0.03 130,0.04 L 480,0.04",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 20,0.98 C 40,1.00 90,0.99 130,0.98 L 480,0.98",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path="M 20,0.96 C 40,0.98 90,0.97 130,0.96 L 480,0.96",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    # Cierre bypass en 18
+    S.append(dict(type="line", x0=480, x1=480, y0=0.02, y1=0.17,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=480, x1=480, y0=0.83, y1=0.98,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20, x1=20, y0=0.02, y1=0.04,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20, x1=20, y0=0.96, y1=0.98,
+        line=dict(color="#2a2a2a", width=1.4)))
+
+    # ── Contorno nucleo ───────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 130,0.17 C 150,0.15 200,0.15 240,0.16 L 370,0.20 L 470,0.14 C 520,0.26 560,0.29 590,0.30",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="path",
+        path="M 130,0.19 C 150,0.17 200,0.17 240,0.18 L 370,0.22 L 470,0.16 C 520,0.28 560,0.31 590,0.32",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 130,0.83 C 150,0.85 200,0.85 240,0.84 L 370,0.80 L 470,0.86 C 520,0.74 560,0.71 590,0.70",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 130,0.81 C 150,0.83 200,0.83 240,0.82 L 370,0.78 L 470,0.84 C 520,0.72 560,0.69 590,0.68",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="line", x0=590, x1=590, y0=0.30, y1=0.32, line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="line", x0=590, x1=590, y0=0.68, y1=0.70, line=dict(color="#2a2a2a", width=1.3)))
+
+    # ── Ojiva delantera ───────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.50 C 33,0.44 56,0.42 90,0.41 L 90,0.59 C 56,0.58 33,0.56 20,0.50 Z",
+        fillcolor=_rgba("#aaaaaa", 0.65), line=dict(color="#444444", width=1.6), layer="above"))
+    S.append(dict(type="path",
+        path="M 22,0.50 C 35,0.46 57,0.44 84,0.43 L 84,0.46 C 57,0.47 35,0.48 22,0.50 Z",
+        fillcolor=_rgba("#ffffff", 0.40), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+
+    # ── Eje mecánico HP (compresor-turbina HP) ────────────────────────────────
+    S.append(dict(type="rect", x0=90, x1=470, y0=0.453, y1=0.547,
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="above"))
+    # Eje LP (fan-turbina LP) — más delgado
+    S.append(dict(type="rect", x0=90, x1=470, y0=0.462, y1=0.538,
+        fillcolor=_rgba("#777777", 0.75), line=dict(color="#444444", width=1.0), layer="above"))
+
+    # ── Palas fan (grande, llega a la carcasa) ────────────────────────────────
+    for xi in range(95, 130, 12):
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.547, y1=0.05,
+            line=dict(color=_rgba("#1a7a5a",0.75), width=5)))
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.453, y1=0.95,
+            line=dict(color=_rgba("#1a7a5a",0.75), width=5)))
+
+    # ── Palas compresor HP (sólo en núcleo) ───────────────────────────────────
+    for xi in range(155, 240, 14):
+        t = (xi - 140) / (240 - 140)
+        y_top = 0.19 + t * 0.05; y_bot = 0.81 - t * 0.05
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+
+    # ── Cámara de combustión ──────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 240,0.33 L 240,0.67 L 254,0.59 L 356,0.59 L 370,0.67 L 370,0.33 L 356,0.41 L 254,0.41 Z",
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="below"))
+
+    # ── Turbina HP ────────────────────────────────────────────────────────────
+    for xi in range(376, 420, 14):
+        t = (xi - 370) / (420 - 370)
+        y_top = 0.22 - t * 0.04; y_bot = 0.78 + t * 0.04
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#b83232",0.78), width=4)))
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#b83232",0.78), width=4)))
+
+    # ── Estación 45 (entre HPT y LPT) ────────────────────────────────────────
+    S.append(dict(type="line", x0=422, x1=422, y0=0.16, y1=0.84,
+        line=dict(color="#cc6600", width=1.0, dash="dot")))
+    A.append(dict(x=422, y=0.00, text="<b>45</b>", showarrow=False,
+        font=dict(size=8, color="#cc6600", family="mono"),
+        xref="x", yref="y", yanchor="top"))
+
+    # ── Turbina LP (conecta con fan) ──────────────────────────────────────────
+    for xi in range(430, 468, 14):
+        t = (xi - 424) / (468 - 424)
+        y_top = 0.20 - t * 0.04; y_bot = 0.80 + t * 0.04
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#cc6600",0.78), width=4)))
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#cc6600",0.78), width=4)))
+
+    # ── Estaciones ────────────────────────────────────────────────────────────
+    STATIONS_TF = [
+        (20,  "1"),
+        (130, "12"),
+        (150, "2"),
+        (240, "3"),
+        (370, "4"),
+        (470, "5"),
+        (480, "18"),
+        (590, "9"),
+    ]
+    ST_Y0, ST_Y1 = 0.00, 1.0
+    bypass_sts = {"12", "18"}
+    for sx, slbl in STATIONS_TF:
+        clr = "#1a7a5a" if slbl in bypass_sts else C["border"]
+        S.append(dict(type="line", x0=sx, x1=sx, y0=ST_Y0, y1=ST_Y1,
+            line=dict(color=clr, width=0.8, dash="dot")))
+        A.append(dict(x=sx, y=ST_Y0-0.02, text=f"<b>{slbl}</b>", showarrow=False,
+            font=dict(size=8, color="#1a7a5a" if slbl in bypass_sts else C["dim"], family="mono"),
+            xref="x", yref="y", yanchor="top"))
+
+    fig = go.Figure()
+    fig.update_layout(shapes=S, annotations=A,
+        plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
+        autosize=True, margin=dict(l=20,r=20,t=0,b=20),
+        xaxis=dict(domain=[0,1], range=[10,610], visible=False, fixedrange=True),
+        yaxis=dict(range=[-0.05,1.05], visible=False, fixedrange=True),
+        showlegend=False)
+    return dcc.Graph(id="other-diagram-tf", figure=fig,
+        config={"displayModeBar": True, "modeBarButtonsToAdd": ["downloadSvg"],
+                "modeBarButtonsToRemove": ["zoom2d","pan2d","select2d","lasso2d",
+                    "zoomIn2d","zoomOut2d","autoScale2d","resetScale2d","hoverClosestCartesian",
+                    "hoverCompareCartesian","toggleSpikelines"],
+                "toImageButtonOptions": {"format":"svg","filename":"turbofan_schema"}},
+        style={"height":"100%","width":"100%"})
+
+
+def _build_turboprop(df):
+    """Turbofan: flujo secundario con carcasa exterior, fan, estaciones 12/13/18."""
+    S, A = [], []
+
+    # ── Carcasa exterior (bypass) ─────────────────────────────────────────────
+    # La carcasa envuelve el motor hasta ~x=480, donde sale el bypass por 18
+    S.append(dict(type="path",
+        path=("M 20,0.04 C 40,0.02 90,0.03 130,0.04 "
+              "L 480,0.04 L 480,0.13 "
+              "C 530,0.20 570,0.24 600,0.26 L 600,0.30 "
+              "C 570,0.28 530,0.24 480,0.17 "
+              "L 480,0.96 "
+              "C 530,0.96 570,0.96 600,0.96 L 600,0.96 L 600,0.70 "
+              "C 570,0.72 530,0.76 480,0.83 "
+              "L 480,0.87 "
+              "C 530,0.80 570,0.76 600,0.74 "
+              "L 600,0.96 L 20,0.96 Z"),
+        fillcolor=_rgba("#4a90d9", 0.07), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Conducto bypass (entre carcasa externa y nucleo) ──────────────────────
+    # Zona bypass: y entre 0.04~0.19 (arriba) y 0.81~0.96 (abajo)
+    S.append(dict(type="path",
+        path="M 130,0.04 L 480,0.04 L 480,0.17 L 130,0.17 Z",
+        fillcolor=_rgba("#1a7a5a", 0.12), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 130,0.83 L 480,0.83 L 480,0.96 L 130,0.96 Z",
+        fillcolor=_rgba("#1a7a5a", 0.12), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Núcleo del motor (zona caliente) ─────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 130,0.19 C 150,0.17 200,0.17 240,0.18 L 380,0.22 L 380,0.78 L 240,0.82 C 200,0.83 150,0.83 130,0.81 Z",
+        fillcolor=_rgba("#4a90d9", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 240,0.18 L 370,0.22 L 370,0.78 L 240,0.82 Z",
+        fillcolor=_rgba("#e28800", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+    S.append(dict(type="path",
+        path="M 370,0.22 L 470,0.16 L 470,0.84 L 370,0.78 Z",
+        fillcolor=_rgba("#b83232", 0.18), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Tobera núcleo ─────────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 470,0.16 C 520,0.28 560,0.31 590,0.32 L 590,0.68 C 560,0.69 520,0.72 470,0.84 Z",
+        fillcolor=_rgba("#b83232", 0.16), line=dict(color="rgba(0,0,0,0)", width=0), layer="below"))
+
+    # ── Bandas 3D carcasa exterior superior/inferior ──────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.02 C 40,0.00 90,0.01 130,0.02 L 480,0.02 L 480,0.04 L 130,0.04 C 90,0.03 40,0.02 20,0.04 Z",
+        fillcolor=_rgba("#888888", 0.35), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+    S.append(dict(type="path",
+        path="M 20,0.96 C 40,0.98 90,0.99 130,0.98 L 480,0.98 L 480,0.96 L 130,0.96 C 90,0.97 40,0.98 20,0.96 Z",
+        fillcolor=_rgba("#888888", 0.35), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+
+    # ── Contorno carcasa exterior ─────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.02 C 40,0.00 90,0.01 130,0.02 L 480,0.02",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path="M 20,0.04 C 40,0.02 90,0.03 130,0.04 L 480,0.04",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 20,0.98 C 40,1.00 90,0.99 130,0.98 L 480,0.98",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="path",
+        path="M 20,0.96 C 40,0.98 90,0.97 130,0.96 L 480,0.96",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    # Cierre bypass en 18
+    S.append(dict(type="line", x0=480, x1=480, y0=0.02, y1=0.17,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=480, x1=480, y0=0.83, y1=0.98,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20, x1=20, y0=0.02, y1=0.04,
+        line=dict(color="#2a2a2a", width=1.4)))
+    S.append(dict(type="line", x0=20, x1=20, y0=0.96, y1=0.98,
+        line=dict(color="#2a2a2a", width=1.4)))
+
+    # ── Contorno nucleo ───────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 130,0.17 C 150,0.15 200,0.15 240,0.16 L 370,0.20 L 470,0.14 C 520,0.26 560,0.29 590,0.30",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="path",
+        path="M 130,0.19 C 150,0.17 200,0.17 240,0.18 L 370,0.22 L 470,0.16 C 520,0.28 560,0.31 590,0.32",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 130,0.83 C 150,0.85 200,0.85 240,0.84 L 370,0.80 L 470,0.86 C 520,0.74 560,0.71 590,0.70",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#555555", width=1.2)))
+    S.append(dict(type="path",
+        path="M 130,0.81 C 150,0.83 200,0.83 240,0.82 L 370,0.78 L 470,0.84 C 520,0.72 560,0.69 590,0.68",
+        fillcolor="rgba(0,0,0,0)", line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="line", x0=590, x1=590, y0=0.30, y1=0.32, line=dict(color="#2a2a2a", width=1.3)))
+    S.append(dict(type="line", x0=590, x1=590, y0=0.68, y1=0.70, line=dict(color="#2a2a2a", width=1.3)))
+
+    # ── Ojiva delantera ───────────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 20,0.50 C 33,0.44 56,0.42 90,0.41 L 90,0.59 C 56,0.58 33,0.56 20,0.50 Z",
+        fillcolor=_rgba("#aaaaaa", 0.65), line=dict(color="#444444", width=1.6), layer="above"))
+    S.append(dict(type="path",
+        path="M 22,0.50 C 35,0.46 57,0.44 84,0.43 L 84,0.46 C 57,0.47 35,0.48 22,0.50 Z",
+        fillcolor=_rgba("#ffffff", 0.40), line=dict(color="rgba(0,0,0,0)", width=0), layer="above"))
+
+    # ── Eje mecánico HP (compresor-turbina HP) ────────────────────────────────
+    S.append(dict(type="rect", x0=90, x1=470, y0=0.453, y1=0.547,
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="above"))
+    # Eje LP (fan-turbina LP) — más delgado
+    S.append(dict(type="rect", x0=90, x1=470, y0=0.462, y1=0.538,
+        fillcolor=_rgba("#777777", 0.75), line=dict(color="#444444", width=1.0), layer="above"))
+
+    # ── Palas fan (grande, llega a la carcasa) ────────────────────────────────
+    for xi in range(95, 130, 12):
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.547, y1=0.05,
+            line=dict(color=_rgba("#1a7a5a",0.75), width=5)))
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.453, y1=0.95,
+            line=dict(color=_rgba("#1a7a5a",0.75), width=5)))
+
+    # ── Palas compresor HP (sólo en núcleo) ───────────────────────────────────
+    for xi in range(155, 240, 14):
+        t = (xi - 140) / (240 - 140)
+        y_top = 0.19 + t * 0.05; y_bot = 0.81 - t * 0.05
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+        S.append(dict(type="line", x0=xi, x1=xi+5, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#1a4d8f",0.72), width=4)))
+
+    # ── Cámara de combustión ──────────────────────────────────────────────────
+    S.append(dict(type="path",
+        path="M 240,0.33 L 240,0.67 L 254,0.59 L 356,0.59 L 370,0.67 L 370,0.33 L 356,0.41 L 254,0.41 Z",
+        fillcolor=_rgba("#999999", 0.60), line=dict(color="#555555", width=1.3), layer="below"))
+
+    # ── Turbina HP ────────────────────────────────────────────────────────────
+    for xi in range(376, 420, 14):
+        t = (xi - 370) / (420 - 370)
+        y_top = 0.22 - t * 0.04; y_bot = 0.78 + t * 0.04
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#b83232",0.78), width=4)))
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#b83232",0.78), width=4)))
+
+    # ── Estación 45 (entre HPT y LPT) ────────────────────────────────────────
+    S.append(dict(type="line", x0=422, x1=422, y0=0.16, y1=0.84,
+        line=dict(color="#cc6600", width=1.0, dash="dot")))
+    A.append(dict(x=422, y=0.00, text="<b>45</b>", showarrow=False,
+        font=dict(size=8, color="#cc6600", family="mono"),
+        xref="x", yref="y", yanchor="top"))
+
+    # ── Turbina LP (conecta con fan) ──────────────────────────────────────────
+    for xi in range(430, 468, 14):
+        t = (xi - 424) / (468 - 424)
+        y_top = 0.20 - t * 0.04; y_bot = 0.80 + t * 0.04
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.547, y1=y_top,
+            line=dict(color=_rgba("#cc6600",0.78), width=4)))
+        S.append(dict(type="line", x0=xi+5, x1=xi, y0=0.453, y1=y_bot,
+            line=dict(color=_rgba("#cc6600",0.78), width=4)))
+
+    # ── Estaciones ────────────────────────────────────────────────────────────
+    STATIONS_TF = [
+        (20,  "1"),
+        (130, "12"),
+        (150, "2"),
+        (240, "3"),
+        (370, "4"),
+        (470, "5"),
+        (480, "18"),
+        (590, "9"),
+    ]
+    ST_Y0, ST_Y1 = 0.00, 1.0
+    bypass_sts = {"12", "18"}
+    for sx, slbl in STATIONS_TF:
+        clr = "#1a7a5a" if slbl in bypass_sts else C["border"]
+        S.append(dict(type="line", x0=sx, x1=sx, y0=ST_Y0, y1=ST_Y1,
+            line=dict(color=clr, width=0.8, dash="dot")))
+        A.append(dict(x=sx, y=ST_Y0-0.02, text=f"<b>{slbl}</b>", showarrow=False,
+            font=dict(size=8, color="#1a7a5a" if slbl in bypass_sts else C["dim"], family="mono"),
+            xref="x", yref="y", yanchor="top"))
+
+    fig = go.Figure()
+    fig.update_layout(shapes=S, annotations=A,
+        plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
+        autosize=True, margin=dict(l=20,r=20,t=0,b=20),
+        xaxis=dict(domain=[0,1], range=[10,610], visible=False, fixedrange=True),
+        yaxis=dict(range=[-0.05,1.05], visible=False, fixedrange=True),
+        showlegend=False)
+    return dcc.Graph(id="other-diagram-tf", figure=fig,
+        config={"displayModeBar": True, "modeBarButtonsToAdd": ["downloadSvg"],
+                "modeBarButtonsToRemove": ["zoom2d","pan2d","select2d","lasso2d",
+                    "zoomIn2d","zoomOut2d","autoScale2d","resetScale2d","hoverClosestCartesian",
+                    "hoverCompareCartesian","toggleSpikelines"],
+                "toImageButtonOptions": {"format":"svg","filename":"turbofan_schema"}},
+        style={"height":"100%","width":"100%"})
+
 def _build_original(engine_type, df):
+    """Router to the new per-engine diagram builders."""
+    if engine_type == "OneSpoolEngine_PC":
+        return _build_onespool_pc(df)
+    elif engine_type == "SingleFlowTurbofan":
+        return _build_turbofan(df)
+    elif engine_type == "OneSpoolTurboprop":
+        return _build_turboprop(df)
+    # Fallback (no debería llegar aquí)
     CK = {
         "intake": "#5a8abf", "fan": "#1a7a5a", "lpc": "#2a70b0",
         "hpc":    C["accent"], "comb": C["accent2"], "hpt": "#cc6600",
@@ -928,61 +1473,18 @@ def _build_original(engine_type, df):
     }
     cy = 0.5
     S, A = [], []
-
     S.append(dict(type="line", x0=10, x1=790, y0=cy, y1=cy,
                   line=dict(color=C["border"], width=0.5, dash="dot")))
-
-    if engine_type == "TwinSpoolEngine":
-        _box(S, A, 25,  95,  cy-0.14, cy+0.14, CK["intake"], "INTAKE")
-        _box(S, A, 100, 190, cy-0.20, cy+0.20, CK["lpc"],    "LPC")
-        _box(S, A, 195, 310, cy-0.28, cy+0.28, CK["hpc"],    "HPC")
-        _box(S, A, 315, 445, cy-0.22, cy+0.22, CK["comb"],   "COMB")
-        _box(S, A, 450, 545, cy-0.26, cy+0.26, CK["hpt"],    "HPT")
-        _box(S, A, 550, 645, cy-0.20, cy+0.20, CK["lpt"],    "LPT")
-        _box(S, A, 650, 725, cy-0.14, cy+0.14, CK["nozzle"], "NOZ")
-        stations = [(25,"0",0),(100,"2",2),(195,"2.5",2.5),(315,"3",3),
-                    (450,"4",4),(550,"4.5",4.5),(650,"5",5),(725,"9",9)]
-
-    elif engine_type == "SingleFlowTurbofan":
-        _box(S, A, 25,  110, cy-0.32, cy+0.32, CK["fan"],    "FAN")
-        _box(S, A, 115, 235, cy-0.32, cy-0.12, CK["lpc"],    "BYPASS")
-        _box(S, A, 115, 235, cy-0.10, cy+0.22, CK["hpc"],    "HPC")
-        _box(S, A, 240, 370, cy-0.18, cy+0.18, CK["comb"],   "COMB")
-        _box(S, A, 375, 470, cy-0.20, cy+0.20, CK["hpt"],    "HPT")
-        _box(S, A, 475, 575, cy-0.26, cy+0.26, CK["lpt"],    "LPT")
-        _box(S, A, 580, 670, cy-0.30, cy+0.30, CK["nozzle"], "NOZ")
-        stations = [(25,"0",0),(115,"1.3",2),(240,"3",3),
-                    (375,"4",4),(475,"4.5",4.5),(580,"5",5),(670,"8",8)]
-
-    else:  # OneSpoolTurboprop
-        _box(S, A, 5,   33,  cy-0.36, cy+0.36, CK["prop"],   "PROP")
-        _box(S, A, 38,  110, cy-0.14, cy+0.14, CK["intake"], "INTAKE")
-        _box(S, A, 115, 225, cy-0.26, cy+0.26, CK["hpc"],    "COMP")
-        _box(S, A, 230, 370, cy-0.22, cy+0.22, CK["comb"],   "COMB")
-        _box(S, A, 375, 475, cy-0.24, cy+0.24, CK["hpt"],    "HPT")
-        _box(S, A, 480, 580, cy-0.20, cy+0.20, CK["lpt"],    "LPT")
-        _box(S, A, 585, 665, cy-0.14, cy+0.14, CK["nozzle"], "NOZ")
-        stations = [(38,"0",0),(115,"2",2),(230,"3",3),
-                    (375,"4",4),(480,"4.5",4.5),(585,"5",5),(665,"9",9)]
-
-    for sx, slbl, st_id in stations:
-        _station_orig(S, A, sx, slbl, _tv(df, st_id), _pv(df, st_id), cy)
-
     fig = go.Figure()
-    fig.update_layout(
-        shapes=S, annotations=A,
+    fig.update_layout(shapes=S, annotations=A,
         plot_bgcolor=C["panel"], paper_bgcolor=C["panel"],
-        margin=dict(l=0, r=0, t=0, b=0),
-        height=200,
-        xaxis=dict(range=[0, 800], visible=False, fixedrange=True),
-        yaxis=dict(range=[0, 1],   visible=False, fixedrange=True),
-        showlegend=False,
-    )
-    return dcc.Graph(
-        figure=fig,
+        margin=dict(l=0,r=0,t=0,b=0), height=200,
+        xaxis=dict(range=[0,800], visible=False, fixedrange=True),
+        yaxis=dict(range=[0,1], visible=False, fixedrange=True),
+        showlegend=False)
+    return dcc.Graph(figure=fig,
         config={"displayModeBar": False, "staticPlot": True},
-        style={"height": "100%", "width": "100%"},
-    )
+        style={"height":"100%","width":"100%"})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1019,7 +1521,7 @@ def menu_engine_card(eid, cfg):
         html.Button("DISEÑO", id=f"btn-select-{eid}", n_clicks=0, style={
             "background":"transparent","border":f"1px solid {cfg['color']}",
             "color":cfg["color"],"fontFamily":C["head"],"fontWeight":"700",
-            "fontSize":"13px","letterSpacing":"3px","padding":"8px 0",
+            "fontSize":"0.95vw","letterSpacing":"3px","padding":"8px 0",
             "cursor":"pointer","width":"100%","textTransform":"uppercase",}),
         
     ], id=f"menu-card-{eid}", style={
@@ -1051,7 +1553,7 @@ menu_screen = html.Div([
             "justifyContent": "center","maxWidth": "2000px","margin": "0 auto"}),
     fluid=True,style={"maxWidth": "2000px","margin": "0 auto","padding": "0 5%"}),
     html.Div("PROP-Lab v4.2  ·  components.py  ·  2025", style={
-        "textAlign":"center","fontFamily":C["mono"],"fontSize":"14px",
+        "textAlign":"center","fontFamily":C["mono"],"fontSize":"0.73vw",
         "color":C["border"],"padding":"32px","marginTop":"16px",
     }),
 ], id="screen-menu", style={"minHeight":"100vh","background":C["bg"],"backgroundImage":"none",
@@ -1121,7 +1623,7 @@ for eid, cfg in ENGINE_CONFIGS.items():
                              "background":C["panel"]}),
             html.Button("▾", id=f"btn-eta-toggle-{eid}", n_clicks=0,
                         style={"background":C["panel"],"border":"none",
-                               "color":C["dim"],"cursor":"pointer","fontSize":"14px",
+                               "color":C["dim"],"cursor":"pointer","fontSize":"1vw",
                                "padding":"0 4px","lineHeight":"1"}),
         ], style={"display":"flex","justifyContent":"space-between","alignItems":"center",
                   "background":C["panel"],"border":f"1px solid {C['border']}",
@@ -1168,13 +1670,13 @@ sim_screen = html.Div([
         html.Div([
             html.Button("◂ MENU", id="btn-back", n_clicks=0),
             html.Span("PROP-Lab", style={"fontFamily":C["head"],"fontWeight":"900",
-                                         "fontSize":"25px","letterSpacing":"5px",
+                                         "fontSize":"1.3vw","letterSpacing":"5px",
                                          "color":C["accent"],"marginLeft":"16px"}),
         ], style={"display":"flex","alignItems":"center"}),
         html.Div([
             # Botón ACTUACIONES
             html.Button("▸  ACTUACIONES", id="btn-actuaciones", n_clicks=0,
-                        style={"fontFamily":C["mono"],"fontSize":"10px",
+                        style={"fontFamily":C["mono"],"fontSize":"0.8vw",
                                "color":C["dim"],"border":f"1px solid {C['border2']}",
                                "padding":"3px 10px","borderRadius":"1px",
                                "background":C["panel2"],"letterSpacing":"1px",
@@ -1203,11 +1705,15 @@ sim_screen = html.Div([
         # Panel B1 — título + diagrama
         html.Div([
             html.Div(id="sim-eng-title", className="section-head",
-                     style={"padding":"8px 0 4px 0"}),
+                     style={"padding":"5px 0 5px 0"}),
             html.Div([
                 dcc.Graph(
                     id="onespool-diagram",
-                    config={"displayModeBar": False, "staticPlot": False},
+                    config={"displayModeBar": True,
+                            "modeBarButtonsToAdd": ["downloadSvg"],
+                            "modeBarButtonsToRemove": ["zoom2d","pan2d","select2d","lasso2d",
+                                "zoomIn2d","zoomOut2d","autoScale2d","resetScale2d"],
+                            "toImageButtonOptions": {"format":"svg","filename":"monoeje_schema"}},
                     style={"height":"100%","width":"100%","display":"none"},
                     figure={"data":[],"layout":{"paper_bgcolor":C["panel"],
                             "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}},
@@ -1248,11 +1754,11 @@ sim_screen = html.Div([
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
-                # Cards col 2
+                # Cards col 2 — rendimientos (color accent3)
                 html.Div([
-                    metric_card(["η motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_th",   "%", ""),
-                    metric_card(["η propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_prop",  "%", ""),
-                    metric_card(["η motoprop.",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_glob",  "%", ""),
+                    metric_card(["Rendimiento motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_th",   "%", "eta-card"),
+                    metric_card(["Rendimiento propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_prop",  "%", "eta-card"),
+                    metric_card(["Rendimiento motopropulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_glob",  "%", "eta-card"),
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
@@ -1261,7 +1767,7 @@ sim_screen = html.Div([
 
              # ── Station info — resultado del click ────────────────────────
             html.Div(id="station-info",
-                     style={"fontFamily":C["mono"],"fontSize":"0.75rem",
+                     style={"fontFamily":C["mono"],"fontSize":"0.75vw",
                             "color":C["accent"],"marginTop":"8px",
                             "padding":"6px 8px",
                             "background":C["panel2"],
@@ -1377,10 +1883,10 @@ _BTN_BACK_STYLE = {
 def _act_slider(slider_id, label, mn, mx, val, step, marks):
     return html.Div([
         html.Div([
-            html.Span(label, style={"fontSize":"11px","color":C["dim"],
+            html.Span(label, style={"fontSize":"0.57vw","color":C["dim"],
                                     "fontFamily":C["head"],"letterSpacing":"1px"}),
             html.Span(id=f"act-val-{slider_id}", style={"fontFamily":C["mono"],
-                                                         "fontSize":"11px","color":C["accent"]}),
+                                                         "fontSize":"0.57vw","color":C["accent"]}),
         ], style={"display":"flex","justifyContent":"space-between","marginBottom":"3px"}),
         dcc.Slider(id=f"act-sl-{slider_id}", min=mn, max=mx, value=val, step=step,
                    marks=marks,
@@ -1764,7 +2270,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
 
 
     # ── Telemetría con subíndices ─────────────────────────────────────────
-    SUB = {"fontSize":"0.72em", "lineHeight":"1"}
+    SUB = {"fontSize":"0.9em", "lineHeight":"1"}
 
     def tele_label(var, station):
         """Celda con Tt4 o Pt4 usando html.Sub"""
@@ -2282,4 +2788,3 @@ for _eid in ENGINE_CONFIGS:
     
 if __name__ == "__main__":
     app.run(debug=True)
-

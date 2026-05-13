@@ -215,25 +215,22 @@ ENGINE_CONFIGS = {
         ],
         # ── Sección 3: Componentes ───────────────────────────────────────────
         "sliders_comp": [
-            ("os_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
-            ("os_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1, 0.01),
-            ("os_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
-            ("os_et",    "\u03B7\u2084\u2085",    0.6, 1, 1, 0.01),
-            ("os_enoz",  "\u03B7\u2085\u2088",     0.6, 1, 1, 0.01),
+            ("os_ec",    "\u03B7\u2082\u208b\u2083",  0.6, 1, 1, 0.01),
+            ("os_ecc",   "\u03B7\u2083\u208b\u2084",     0.6, 1, 1, 0.01),
+            ("os_et",    "\u03B7\u2084\u208b\u2085",    0.6, 1, 1, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine,
         "runner": lambda p: sim.OneSpoolEngine().simulate(
             p["os_t0"], p["os_p0"] * 1000,
             p["os_mach"], p["os_G"], p["os_pi"], p["os_tit"],
-            eta_dif=p["os_edif"], eta_c=p["os_ec"], eta_cc=p["os_ecc"],
-            eta_t=p["os_et"], eta_noz=p["os_enoz"],
+            eta_c=p["os_ec"], eta_cc=p["os_ecc"], eta_t=p["os_et"], 
         ),
         "sweep_base": lambda p: {
             "T_amb": p["os_t0"], "P_amb": p["os_p0"] * 1000,
             "mach":p["os_mach"], "G":p["os_G"],
             "pi_23":p["os_pi"],  "tit":p["os_tit"],
-            "eta_dif":p["os_edif"], "eta_c":p["os_ec"], "eta_cc":p["os_ecc"],
-            "eta_t":p["os_et"],  "eta_noz":p["os_enoz"],
+            "eta_c":p["os_ec"], "eta_cc":p["os_ecc"],
+            "eta_t":p["os_et"],  
         },
     },
     "OneSpoolEngine_PC": {
@@ -252,26 +249,24 @@ ENGINE_CONFIGS = {
             ("ts_G",     "G [kg/s]",               5,  200,   20,  1),
         ],
         "sliders_comp": [
-            ("ts_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
-            ("ts_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1, 0.01),
-            ("ts_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
-            ("ts_et",    "\u03B7\u2084\u2085",    0.6, 1, 1, 0.01),
-            ("ts_enoz",  "\u03B7\u2085\u2088",     0.6, 1, 1, 0.01),
+            ("ts_ec",    "\u03B7\u2082\u208b\u2083",  0.6, 1, 1, 0.01),
+            ("ts_ecc",   "\u03B7\u2083\u208b\u2084",     0.6, 1, 1, 0.01),
+            ("ts_et",    "\u03B7\u2084\u208b\u2085",    0.6, 1, 1, 0.01),
         ],
         "engine_cls": sim.OneSpoolEngine_PC,
         "runner": lambda p: sim.OneSpoolEngine_PC().simulate(
             p["ts_t0"], p["ts_p0"] * 1000,
             p["ts_mach"], p["ts_G"],
             p["ts_pi"], p["ts_tit"], p["ts_tpc"],
-            eta_dif=p["ts_edif"], eta_c=p["ts_ec"], eta_cc=p["ts_ecc"], 
-            eta_t=p["ts_et"], eta_noz=p["ts_enoz"],
+            eta_c=p["ts_ec"], eta_cc=p["ts_ecc"], 
+            eta_t=p["ts_et"], 
         ),
         "sweep_base": lambda p: {
             "T_amb": p["ts_t0"], "P_amb": p["ts_p0"] * 1000,
             "mach":p["ts_mach"],    "G":p["ts_G"],
             "pi_23":p["ts_pi"], "tit":p["ts_tit"], "tpc":p["ts_tpc"],
-            "eta_dif":p["ts_edif"], "eta_c":p["ts_ec"], "eta_cc":p["ts_ecc"],   
-            "eta_t":p["ts_et"], "eta_noz":p["ts_enoz"],
+            "eta_c":p["ts_ec"], "eta_cc":p["ts_ecc"],   
+            "eta_t":p["ts_et"]
         },
     },
     "SingleFlowTurbofan": {
@@ -291,34 +286,29 @@ ENGINE_CONFIGS = {
             ("tf_pifan", "\u03C0 fan",             1.1,  3.0,  1.4, 0.05),
         ],
         "sliders_comp": [
-            ("tf_edif",  "\u03B7\u2080\u2082",   0.6, 1, 1, 0.01),
-            ("tf_efan",  "\u03B7\u2081\u2082\u2081\u2083",       0.6, 1, 1.0,  0.01),
-            ("tf_ec",    "\u03B7\u2082\u2083", 0.6, 1, 1.0,  0.01),
-            ("tf_ecc",   "\u03B7\u2083\u2084",    0.6, 1, 1, 0.01),
-            ("tf_ehpt",  "\u03B7\u2084\u2084\u2085",  0.6, 1, 1.0,  0.01),
-            ("tf_elpt",  "\u03B7\u2084\u2085\u2085",  0.6, 1, 1.0,  0.01),
-            ("tf_enoz",  "\u03B7\u2085\u2089",    0.6, 1, 1, 0.01),
-
+            ("tf_efan",  "\u03B7\u2081\u2082\u208b\u2081\u2083",       0.6, 1, 1.0,  0.01),
+            ("tf_ec",    "\u03B7\u2082\u208b\u2083", 0.6, 1, 1.0,  0.01),
+            ("tf_ecc",   "\u03B7\u2083\u208b\u2084",    0.6, 1, 1, 0.01),
+            ("tf_ehpt",  "\u03B7\u2084\u208b\u2084\u2085",  0.6, 1, 1.0,  0.01),
+            ("tf_elpt",  "\u03B7\u2084\u2085\u208b\u2085",  0.6, 1, 1.0,  0.01),
         ],
         "engine_cls": sim.SingleFlowTurbofan,
         "runner": lambda p: sim.SingleFlowTurbofan().simulate(
             p["tf_t0"], p["tf_p0"] * 1000,
             p["tf_mach"], p["tf_G"], p["tf_pi"], p["tf_tit"],
             p["tf_pifan"], p["tf_bpr"],
-            eta_dif=p["tf_edif"], eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
+            eta_c=p["tf_ec"], eta_fan=p["tf_efan"],
             eta_cc=p["tf_ecc"],
-            eta_hpt=p["tf_ehpt"], eta_lpt=p["tf_elpt"],
-            eta_noz=p["tf_enoz"],
+            eta_hpt=p["tf_ehpt"], eta_lpt=p["tf_elpt"]
         ),
         "sweep_base": lambda p: {
             "T_amb": p["tf_t0"], "P_amb": p["tf_p0"] * 1000,
             "mach":p["tf_mach"],    "G":p["tf_G"],
             "pi_23":p["tf_pi"],     "tit":p["tf_tit"],
             "pi_fan":p["tf_pifan"], "bpr":p["tf_bpr"],
-            "eta_dif":p["tf_edif"], "eta_c":p["tf_ec"], "eta_fan":p["tf_efan"],
+            "eta_c":p["tf_ec"], "eta_fan":p["tf_efan"],
             "eta_cc":p["tf_ecc"],
             "eta_hpt":p["tf_ehpt"], "eta_lpt":p["tf_elpt"],
-            "eta_noz":p["tf_enoz"],
         },
     },
     "OneSpoolTurboprop": {
@@ -338,31 +328,26 @@ ENGINE_CONFIGS = {
             ("tp_etam",  "\u03B7 mecanica",   0.5, 1, 1, 0.01),
         ],
         "sliders_comp": [
-            ("tp_edif",  "\u03B7\u2080\u2082",    0.6, 1, 1, 0.01),
-            ("tp_ec",    "\u03B7\u2082\u2083",  0.6, 1, 1.0,  0.01),
-            ("tp_ecc",   "\u03B7\u2083\u2084",     0.6, 1, 1, 0.01),
-            ("tp_ehpt",  "\u03B7\u2084\u2084\u2085",   0.6, 1, 1.0,  0.01),
-            ("tp_elpt",  "\u03B7\u2084\u2085\u2085",   0.6, 1, 1.0,  0.01),
-            ("tp_enoz",  "\u03B7\u2085\u2089",     0.6, 1, 1, 0.01),
-
+            ("tp_ec",    "\u03B7\u2082\u208b\u2083",  0.6, 1, 1.0,  0.01),
+            ("tp_ecc",   "\u03B7\u2083\u208b\u2084",     0.6, 1, 1, 0.01),
+            ("tp_ehpt",  "\u03B7\u2084\u208b\u2084\u2085",   0.6, 1, 1.0,  0.01),
+            ("tp_elpt",  "\u03B7\u2084\u2085\u208b\u2085",   0.6, 1, 1.0,  0.01),
         ],
         "engine_cls": sim.OneSpoolTurboprop,
         "runner": lambda p: sim.OneSpoolTurboprop().simulate(
             p["tp_t0"], p["tp_p0"] * 1000,
             p["tp_mach"], p["tp_G"], p["tp_pi"], p["tp_tit"],
             p["tp_Wh"] * 1000, p["tp_etam"],
-            eta_dif=p["tp_edif"], eta_c=p["tp_ec"], eta_cc=p["tp_ecc"],
+            eta_c=p["tp_ec"], eta_cc=p["tp_ecc"],
             eta_hpt=p["tp_ehpt"], eta_lpt=p["tp_elpt"],
-            eta_noz=p["tp_enoz"],
         ),
         "sweep_base": lambda p: {
             "T_amb": p["tp_t0"], "P_amb": p["tp_p0"] * 1000,
             "mach":p["tp_mach"],  "G":p["tp_G"],
             "pi_23":p["tp_pi"],   "tit":p["tp_tit"],
             "W_h":p["tp_Wh"]*1000, "eta_m":p["tp_etam"],
-            "eta_dif":p["tp_edif"], "eta_c":p["tp_ec"], "eta_cc":p["tp_ecc"],
+            "eta_c":p["tp_ec"], "eta_cc":p["tp_ecc"],
             "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
-            "eta_noz":p["tp_enoz"],
         },
     },
 }
@@ -2742,13 +2727,13 @@ def compute_actuaciones(_n, t4tmax_K, alt_m, t4tcr_K, engine_type, *all_vals):
     return fig_thrust, fig_tsfc
 
 # ── Mapa zona → sid de rendimiento (OneSpoolEngine) ───────────────────────────
-_ETA_MAP = {
-    "difusor":   ("os_edif",  "η difusor",  None,        None),
-    "compresor": ("os_ec",    "η compresor","W_comp",    "Trabajo [kJ/kg]"),
-    "camara":    ("os_ecc",   "η cámara",   "FAR",       "FAR"),
-    "turbina":   ("os_et",    "η turbina",  "shaft_MW",  "Potencia eje [MW]"),
-    "tobera":    ("os_enoz",  "η tobera",   "V_jet",     "V_jet [m/s]"),
-}
+# _ETA_MAP = {
+#     "difusor":   ("os_edif",  "η difusor",  None,        None),
+#     "compresor": ("os_ec",    "η compresor","W_comp",    "Trabajo [kJ/kg]"),
+#     "camara":    ("os_ecc",   "η cámara",   "FAR",       "FAR"),
+#     "turbina":   ("os_et",    "η turbina",  "shaft_MW",  "Potencia eje [MW]"),
+#     "tobera":    ("os_enoz",  "η tobera",   "V_jet",     "V_jet [m/s]"),
+# }
 col = C["accent"]
  
  

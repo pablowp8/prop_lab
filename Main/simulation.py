@@ -273,8 +273,8 @@ class OneSpoolEngine:
         T_2t, P_2t, S_2         = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c    = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
-        T_9, P_9, S_9, V_jet, A_8    = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G)
+        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR))
+        T_9, P_9, S_9, V_jet, A_8    = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,2.5,3,4,4.5,5,6,7,8,9], columns=['T','P']),
@@ -332,9 +332,9 @@ class OneSpoolEngine_PC:
         T_2t, P_2t, S_2              = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c         = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G)
-        T_7t, P_7t, S_7, A_8         = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G)
-        T_9, P_9, S_9, V_jet, A_8pc  = self.nozz.calculate(T_7t, P_7t, S_7, T_0, P_0, G)
+        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR))
+        T_7t, P_7t, S_7, A_8         = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G*(1+FAR))
+        T_9, P_9, S_9, V_jet, A_8pc  = self.nozz.calculate(T_7t, P_7t, S_7, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,2.5,3,4,4.5,5,6,7,8,9], columns=['T','P']),
@@ -388,9 +388,9 @@ class SingleFlowTurbofan:
         T_12t, P_12t, S_12 = T_2t, P_2t, S_2
         T_13t, P_13t, S_13, W_fan   = self.fan.calculate(T_12t,  P_12t, S_12, pi_fan)
         T_4t,  P_4t, S_4, FAR           = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G)
-        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_fan * bpr, G)
-        T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t,  P_5t,  S_5, T_0, P_0, G)
+        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR))
+        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_fan * bpr, G*(1+FAR))
+        T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t,  P_5t,  S_5, T_0, P_0, G*(1+FAR))
         T_19,  P_19,  S_19,   V_bypass, A_18 = self.nozz.calculate(T_13t, P_13t, S_13, T_0, P_0, G*bpr)
 
         df = _fill_df(
@@ -452,9 +452,9 @@ class OneSpoolTurboprop:
         T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t,  P_3t, S_3, W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t,  P_4t, S_4, FAR      = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G)
-        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_h * eta_m, G)
-        T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G)
+        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR))
+        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_h * eta_m, G*(1+FAR))
+        T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,3,4,4.5,5,6,7,8,9], columns=['T','P']),

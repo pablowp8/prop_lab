@@ -2518,7 +2518,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         visible_keys = []
     elif engine_type == "OneSpoolEngine_PC":
         visible_keys = []
-    elif engine_type == "TurboFan":
+    elif engine_type == "SingleFlowTurbofan":
         visible_keys = []
     elif engine_type == "TurboPropEngine":
         visible_keys = []

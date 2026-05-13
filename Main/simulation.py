@@ -178,13 +178,13 @@ def _build_stations(local_vars):
             
     return stations
 
-def _perf(V_jet, V0, m_dot, FAR, opr, A_8,
+def _perf(V_jet, V0, m_dot, FAR, opr, A_8, A_18=0,
           V_bypass=0.0, m_bypass=0.0, shaft_W=0.0,
-          P_9=0.0, Tt0=0.0, Tt3=0.0, Tt4=0.0, Tt5=0.0,
+          P_9=0.0, P_19=0.0, Tt0=0.0, Tt3=0.0, Tt4=0.0, Tt5=0.0,
           Pt0_kPa=0.0, Pt3_kPa=0.0, P0_kPa=0.0):
     """Calcula el dict de actuaciones comunes a todos los motores."""
     F_core   = m_dot    * ((1 + FAR) * V_jet    - V0) + A_8*(P_9 - Pt0_kPa*1000 )
-    F_bypass = m_bypass * (V_bypass  - V0)
+    F_bypass = m_bypass * (V_bypass  - V0) + A_18*(P_19 - Pt0_kPa*1000 )
     F_total  = F_core + F_bypass
 
     fuel_kg_s = m_dot * FAR   # FAR es la fracción de combustible
@@ -375,7 +375,7 @@ class SingleFlowTurbofan:
                  eta_hpt=None, eta_lpt=None, eta_noz=None):
         if eta_dif is not None: self.dif.eta         = eta_dif
         if eta_c   is not None: self.comp.eta        = eta_c
-        if eta_fan is not None: self.fan.eta          = eta_fan
+        if eta_fan is not None: self.fan.eta         = eta_fan
         if eta_cc  is not None: self.cc.eta          = eta_cc
         if eta_hpt is not None: self.hp_turbine.eta  = eta_hpt
         if eta_lpt is not None: self.lp_turbine.eta  = eta_lpt
@@ -386,12 +386,13 @@ class SingleFlowTurbofan:
         S_0 = 0
         T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t,  P_3t, S_3,  W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
-        T_13t, P_13t, S_13, W_fan   = self.fan.calculate(T_2t,  P_2t, S_2, pi_fan)
+        T_12t, P_12t, S_12 = T_2t, P_2t, S_2
+        T_13t, P_13t, S_13, W_fan   = self.fan.calculate(T_12t,  P_12t, S_12, pi_fan)
         T_4t,  P_4t, S_4, FAR           = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G)
         T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_fan * bpr, G)
         T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t,  P_5t,  S_5, T_0, P_0, G)
-        _,     _,  S_19,   V_bypass, A_18 = self.nozz.calculate(T_13t, P_13t, S_13, T_0, P_0, G)
+        T_19,  P_19,  S_19,   V_bypass, A_18 = self.nozz.calculate(T_13t, P_13t, S_13, T_0, P_0, G*bpr)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,3,4,4.5,5,6,7,8,9,1.2,1.3,1.7,1.8,1.9],
@@ -400,16 +401,17 @@ class SingleFlowTurbofan:
             {0:"0", 2:"2t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 9:"9", 1.3:"13t"},
         )
 
-        m_core   = G / (1 + bpr)
-        m_bypass = G * bpr / (1 + bpr)
+        m_bypass = G * bpr
         opr      = pi_fan * pi_23
 
-        r = _perf(V_jet=V_jet, V0=V0, m_dot=m_core, FAR=FAR, opr=opr, A_8=A_8,
-                  V_bypass=V_bypass, m_bypass=m_bypass,
-                  P_9=P_9, Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
+        r = _perf(V_jet=V_jet, V0=V0, m_dot=G, FAR=FAR, opr=opr, A_8=A_8,
+                  A_18=A_18, V_bypass=V_bypass, m_bypass=m_bypass,
+                  P_9=P_9, P_19=P_19, Tt0=T_2t, Tt3=T_3t, Tt4=T_4t, Tt5=T_5t,
                   Pt0_kPa=P_2t/1000, Pt3_kPa=P_3t/1000, P0_kPa=P_0/1000)
         stations = _build_stations(locals())
         
+        r["A8"]          = A_8
+        r["A18"]         = A_18
         r["df"]          = df
         r["opr"]         = opr
         r["bpr"]         = bpr

@@ -2484,6 +2484,13 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             text=f"{value:.1f}{suffix}",
             showarrow=False,
             font=dict(size=13, family=C["mono"], color=C["accent"])))
+        
+        # ── Título ────────────────────────────────────────────────────
+        annotations.append(dict(
+            x=CX, y=0.02,
+            text=title,
+            showarrow=False,
+            font=dict(size=9, family=C["head"], color=C["dim"])))
 
         # ── Figura final ──────────────────────────────────────────────
         fig = go.Figure(data=traces)

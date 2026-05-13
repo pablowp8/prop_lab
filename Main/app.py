@@ -63,9 +63,9 @@ PARAM_META = {
     # 'F_resid_kN':  {'label': 'F residual',   'unit': 'kN',        'color': '#7F77DD', 'dec': 2},
     # 'SFC':         {'label': 'SFC',          'unit': 'kg/(N·h)',  'color': '#D4537E', 'dec': 4},
     # 'TSFC_mg':     {'label': 'TSFC',         'unit': 'mg/(N·s)',  'color': '#993556', 'dec': 2},
-    # 'eta_th':      {'label': 'η térmico',    'unit': '%',         'color': '#BA7517', 'dec': 1},
-    # 'eta_prop':    {'label': 'η propulsivo', 'unit': '%',         'color': '#534AB7', 'dec': 1},
-    # 'eta_global':  {'label': 'η global',     'unit': '%',         'color': '#5F5E5A', 'dec': 1},
+    # 'eta_m':      {'label': 'η térmico',    'unit': '%',         'color': '#BA7517', 'dec': 1},
+    # 'eta_p':    {'label': 'η propulsivo', 'unit': '%',         'color': '#534AB7', 'dec': 1},
+    # 'eta_mp':  {'label': 'η global',     'unit': '%',         'color': '#5F5E5A', 'dec': 1},
     # 'fuel_kg_s':   {'label': 'Combustible',  'unit': 'kg/s',      'color': '#D85A30', 'dec': 4},
     # 'FAR':         {'label': 'FAR',          'unit': '–',         'color': '#444441', 'dec': 4},
     # 'V_jet':       {'label': 'V jet',        'unit': 'm/s',       'color': '#378ADD', 'dec': 1},
@@ -1756,9 +1756,9 @@ sim_screen = html.Div([
 
                 # Cards col 2 — rendimientos (color accent3)
                 html.Div([
-                    metric_card(["Rendimiento motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_th",   "%", "eta-card"),
-                    metric_card(["Rendimiento propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_prop",  "%", "eta-card"),
-                    metric_card(["Rendimiento motopropulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_glob",  "%", "eta-card"),
+                    metric_card(["Rendimiento motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_m",   "%", "eta-card"),
+                    metric_card(["Rendimiento propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_p",  "%", "eta-card"),
+                    metric_card(["Rendimiento motopropulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_mp",  "%", "eta-card"),
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
@@ -2093,9 +2093,9 @@ def update_labels(*vals):
     Output("m-sp_thrust",      "children"),
     Output("m-SFC",           "children"),
     Output("m-fuel",           "children"),
-    Output("m-eta_th",         "children"),
-    Output("m-eta_prop",       "children"),
-    Output("m-eta_glob",       "children"),
+    Output("m-eta_m",         "children"),
+    Output("m-eta_p",       "children"),
+    Output("m-eta_mp",       "children"),
     Output("graph-ts",           "figure"),
     Output("graph-gauge-thrust", "figure"),
     Output("graph-gauge-epr",    "figure"),
@@ -2157,16 +2157,16 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     _V0      = r["V0"]
     _Vjet    = r["V_jet"]
     _G       = r["m_core"] + r["m_bypass"] # kg/s
-    _sp_thrust = (r["thrust_kN"] * 1000) /_G  # N·s/kg = N / (kg/s)
+    _sp_thrust = r["sp_thrust"]  # N·s/kg = N / (kg/s)
 
     metrics = [
         f"{r['thrust_kN']:.2f}",
-        f"{_sp_thrust:.1f}",
+        f"{r['sp_thrust']:.1f}",
         f"{r['SFC']:.3f}",
         f"{r['fuel_kg_s']:.4f}",
-        f"{r['eta_th']:.1f}",
-        f"{r['eta_prop']:.1f}",
-        f"{r['eta_global']:.1f}",
+        f"{r['eta_m']:.1f}",
+        f"{r['eta_p']:.1f}",
+        f"{r['eta_mp']:.1f}",
     ]
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────

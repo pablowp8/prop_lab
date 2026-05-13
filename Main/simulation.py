@@ -421,7 +421,16 @@ class SingleFlowTurbofan:
 
 
 class OneSpoolTurboprop:
-    """Turbohélice: Compresor → Cámara → HPT → LPT → Tobera residual."""
+    """Turbohélice monoeje con turbina libre.
+    
+    Ciclo: Difusor(0→2) → Compresor(2→3) → Cámara(3→4)
+           → Turbina HP(4→45, mueve compresor) → Turbina libre(45→5, mueve hélice)
+           → Tobera adaptada(5→8)
+
+    Inputs principales:
+        lam  : relación de velocidades  λ = (V8/Vtb)²  (Vtb = vel. ideal turbina libre)
+        eta_m: rendimiento mecánico transmisión hélice
+    """
 
     def __init__(self):
         self.dif        = Difussor()
@@ -429,78 +438,159 @@ class OneSpoolTurboprop:
         self.cc         = CombustionChamber()
         self.hp_turbine = Turbine()
         self.lp_turbine = Turbine()
-        self.pc         = Postcombustor()
         self.nozz       = Nozzle()
 
-    def simulate(self, T_0, P_0, mach, G, pi_23, tit, W_h, eta_m,
+    def simulate(self, T_0, P_0, mach, G, pi_23, tit, lam, eta_m, eta_h=1.0,
                  eta_dif=None, eta_c=None, eta_cc=None,
                  eta_hpt=None, eta_lpt=None, eta_noz=None):
         """
-        W_h   : potencia extraída al eje [W]
-        eta_m : eficiencia mecánica de la transmisión
+        lam   : λ = (V9/Vtb)²  — relación de velocidades tobera/turborreactor base
+        eta_m : rendimiento mecánico de la transmisión (turbina HP ↔ compresor)
+        eta_h : rendimiento de la hélice (potencia mecánica → empuje)
         """
-        if eta_dif is not None: self.dif.eta         = eta_dif
-        if eta_c   is not None: self.comp.eta        = eta_c
-        if eta_cc  is not None: self.cc.eta          = eta_cc
-        if eta_hpt is not None: self.hp_turbine.eta  = eta_hpt
-        if eta_lpt is not None: self.lp_turbine.eta  = eta_lpt
-        if eta_noz is not None: self.nozz.eta        = eta_noz
+        if eta_dif is not None: self.dif.eta        = eta_dif
+        if eta_c   is not None: self.comp.eta       = eta_c
+        if eta_cc  is not None: self.cc.eta         = eta_cc
+        if eta_hpt is not None: self.hp_turbine.eta = eta_hpt
+        if eta_lpt is not None: self.lp_turbine.eta = eta_lpt
+        if eta_noz is not None: self.nozz.eta       = eta_noz
 
-        V0 = mach * speed_of_sound(T_0)
-        
+        g   = GAMMA
+        V0  = mach * speed_of_sound(T_0)
         S_0 = 0
-        T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
-        T_3t,  P_3t, S_3, W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
-        T_4t,  P_4t, S_4, FAR      = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR))
-        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_h * eta_m, G*(1+FAR))
-        T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G*(1+FAR))
+
+        # ── 0→2  Difusor ──────────────────────────────────────────────────
+        T_2t, P_2t, S_2        = self.dif.calculate(T_0, P_0, S_0, mach)
+
+        # ── 2→3  Compresor ────────────────────────────────────────────────
+        T_3t, P_3t, S_3, W_c  = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
+
+        # ── 3→4  Cámara de combustión ─────────────────────────────────────
+        T_4t, P_4t, S_4, FAR  = self.cc.calculate(T_3t, P_3t, S_3, tit)
+
+        # ── 4→45  Turbina HP (mueve compresor, balance T23 = T45,5) ───────
+        # T23 = T45,5  →  T_3t - T_2t = T_4t - T_45t
+        T_45t = T_4t - (T_3t - T_2t)
+        P_45t = P_4t * ((1 - (1/self.hp_turbine.eta)*(1 - T_45t/T_4t))
+                        ** (g / (g - 1)))
+        S_45  = S_4 + CP * math.log(T_45t / T_4t) - R_GAS * math.log(P_45t / P_4t)
+
+        # ── 45→5  Turbina libre + tobera (acopladas por λ) ───────────────
+        # Vtb: velocidad si toda la energía de P45t→P0 fuera a tobera (ideal)
+        Vtb   = math.sqrt(2 * CP * T_45t * (1 - (P_0 / P_45t)**((g-1)/g)))
+
+        # V8 = sqrt(λ) * Vtb  →  λ = (V8/Vtb)²
+        V_jet = math.sqrt(lam) * Vtb          # velocidad real de salida tobera [m/s]
+
+        # Energía que sale por tobera [J/kg_total]:  0.5·V8²
+        # Energía extraída por turbina libre [J/kg_total]: Vtb² - V8²)/2 = (1-λ)·Vtb²/2
+        W_lpt_spec = 0.5 * (Vtb**2 - V_jet**2)   # [J/kg]
+
+        # T_5t: temperatura remanso a entrada de tobera
+        T_5t  = T_45t - W_lpt_spec / CP
+        P_5t  = P_45t * ((1 - (1/self.lp_turbine.eta)*(1 - T_5t/T_45t))
+                         ** (g / (g - 1)))
+        S_5   = S_45 + CP * math.log(max(T_5t,1) / T_45t) - R_GAS * math.log(max(P_5t,1e-6) / P_45t)
+
+        # T8 estática: tobera adaptada (P8=P0)
+        T_8   = T_5t - V_jet**2 / (2 * CP)
+        P_8   = P_0
+
+        # Área tobera (aproximación)
+        A_8_param = (g + 1) / 2
+        A_8   = (G*(1+FAR) * math.sqrt(T_5t) / max(P_5t,1)) * math.sqrt(R_GAS/g) * A_8_param**((g+1)/(2*(g-1)))
+
+        # ── Potencias y rendimientos ──────────────────────────────────────
+        fuel_kg_s = G * FAR
+        c_fuel    = fuel_kg_s * LHV          # potencia calorífica total [W]   cL
+
+        # Ph = G·cp·(T_45t - T_5t)·η_m  (hipótesis c<<G: flujo ≈ G)
+        Ph = G * W_lpt_spec * eta_m          # potencia hélice [W]
+
+        # Energía cinética residual tobera: ½·G·V₉²
+        Ec_resid = 0.5 * G * V_jet**2        # [W]
+
+        # Empuje tobera residual
+        F_resid  = G * V_jet - G * V0        # E = G(V9 - V0)  [N]
+
+        # Empuje hélice: T = Ph·η_h / V0  (en vuelo); en banco no tiene sentido físico
+        if V0 > 1.0:
+            F_helice = Ph * eta_h / V0       # [N]
+        else:
+            F_helice = 0.0                   # banco: empuje hélice indefinido
+
+        F_total  = F_helice + F_resid
+
+        # ── Rendimientos según teoría ─────────────────────────────────────
+        # η_M = (Ph + ½G(V9² - V0²)) / cL
+        eta_M  = (Ph + 0.5 * G * (V_jet**2 - V0**2)) / max(c_fuel, 1.0)
+
+        # η_p = (EV0 + Ph·η_h) / (Ph + ½G(V9² - V0²))
+        #      numerador  = empuje_tobera·V0 + Ph·η_h
+        #      denominador = Ph + ½G(V9²-V0²)   [= denominador de η_M · cL]
+        denom_p  = Ph + 0.5 * G * (V_jet**2 - V0**2)
+        numer_p  = F_resid * V0 + Ph * eta_h
+        eta_p    = numer_p / max(denom_p, 1.0)
+
+        # η_MP = η_M · η_p  = (EV0 + Ph·η_h) / cL
+        eta_MP   = eta_M * eta_p
+
+        # CE = ṁ_f / Ph  [g/MJ]  — consumo por unidad de potencia en el eje hélice
+        W_eq   = Ph                          # potencia equivalente en banco = Ph
+        CE     = fuel_kg_s / max(Ph, 1.0) * 1e9   # g/MJ
+
+        # SFC [g/kN·s] para compatibilidad con otros motores
+        SFC    = fuel_kg_s * 1e6 / max(abs(F_total), 1.0)
 
         df = _fill_df(
             pd.DataFrame(index=[0,1,2,3,4,4.5,5,6,7,8,9], columns=['T','P']),
             locals(),
-            {0:"0", 2:"2t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 9:"9"},
+            {0:"0", 2:"2t", 3:"3t", 4:"4t", 4.5:"45t", 5:"5t", 8:"8"},
         )
-        
+
         stations = _build_stations(locals())
 
-        fuel_kg_s  = G * FAR
-        F_residual = G * (V_jet - V0)
-        F_helice   = W_h * eta_m / max(V0, 1.0)
-        F_total    = F_helice + F_residual
-
-        eta_th = max(0.0, 1 - 1 / max(pi_23, 1.001) ** ((GAMMA - 1) / GAMMA))
-
         return {
-            "thrust_kN":   F_total / 1000,
-            "F_helice_kN": F_helice / 1000,
-            "F_resid_kN":  F_residual / 1000,
-            "SFC":         fuel_kg_s / max(abs(F_total), 1) * 3600,
-            "TSFC_mg":     (fuel_kg_s / max(abs(F_total), 1) * 3600) * 1e6 / 9.81,
-            "eta_th":      eta_th * 100,
-            "eta_prop":    0.0,
-            "eta_global":  0.0,
+            # ── Empuje ─────────────────────────────────────────────────
+            "thrust_kN":   F_total   / 1000,
+            "sp_thrust":   F_total   / max(G, 1e-9),   # Empuje específico [N·s/kg]
+            "F_helice_kN": F_helice  / 1000,
+            "F_resid_kN":  F_resid   / 1000,
+            # ── Potencias ──────────────────────────────────────────────
+            "shaft_MW":    Ph        / 1e6,             # Ph hélice [MW]
+            "W_eq_MW":     W_eq      / 1e6,             # Potencia equivalente [MW]
+            # ── Consumo ────────────────────────────────────────────────
+            "SFC":         SFC,                         # g/kN·s
+            "TSFC_mg":     SFC * 1e6 / 9.81,
+            "CE_gMJ":      CE,                          # g/MJ (ejercicio)
             "fuel_kg_s":   fuel_kg_s,
             "FAR":         FAR,
+            # ── Rendimientos ───────────────────────────────────────────
+            "eta_m":       eta_M  * 100,                # η motor [%]
+            "eta_p":       eta_p  * 100,                # η propulsivo [%]
+            "eta_mp":      eta_MP * 100,                # η motopropulsor [%]
+            # ── Velocidades ────────────────────────────────────────────
             "V_jet":       V_jet,
+            "Vtb":         Vtb,
             "V_bypass":    0.0,
             "V0":          V0,
             "m_core":      G,
             "m_bypass":    0.0,
-            "shaft_MW":    W_h * eta_m / 1e6,
-            "EGT":         T_5t * 0.88,
+            # ── Temperaturas / presiones ───────────────────────────────
+            "EGT":         T_8 * 0.88,
             "T0_K":        T_2t,
             "Tt3_K":       T_3t,
             "Tt4_K":       T_4t,
             "Tt5_K":       T_5t,
-            "Pt0_kPa":     P_2t / 1000,
-            "Pt3_kPa":     P_3t / 1000,
-            "P0_kPa":      P_0 / 1000,
+            "Pt0_kPa":     P_2t  / 1000,
+            "Pt3_kPa":     P_3t  / 1000,
+            "P0_kPa":      P_0   / 1000,
+            # ── Misc ───────────────────────────────────────────────────
             "df":          df,
             "opr":         pi_23,
             "engine_type": "OneSpoolTurboprop",
             "tit_limit":   TIT_LIMIT,
-            "stations":    stations
+            "stations":    stations,
         }
 
 

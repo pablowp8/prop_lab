@@ -79,28 +79,18 @@ PARAM_META = {
     # 'tit_limit':   {'label': 'TIT límite',   'unit': 'K',         'color': '#888780', 'dec': 0},
     'T_0':         {'label': 'T0',           'unit': 'K',         'color': '#5DCAA5', 'dec': 1},
     'T_2t':        {'label': 'T2t',          'unit': 'K',         'color': '#185FA5', 'dec': 1},
-    'T_25t':       {'label': 'T25t',         'unit': 'K',         'color': '#185FA5', 'dec': 1},
     'T_3t':        {'label': 'T3t',          'unit': 'K',         'color': '#D85A30', 'dec': 1},
     'T_4t':        {'label': 'T4t',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
     'T_45t':       {'label': 'T45t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
     'T_5t':        {'label': 'T5t',          'unit': 'K',         'color': '#7F77DD', 'dec': 1},
-    'T_7t':        {'label': 'T7t',          'unit': 'K',         'color': '#A32D2D', 'dec': 1},
     'T_9':         {'label': 'T9',           'unit': 'K',         'color': '#0F6E56', 'dec': 1},
-    'T_12t':       {'label': 'T12t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
-    'T_13t':       {'label': 'T13t',         'unit': 'K',         'color': '#A32D2D', 'dec': 1},
-    'T_19':        {'label': 'T19',          'unit': 'K',         'color': '#0F6E56', 'dec': 1},
     'P_0':         {'label': 'P0',           'unit': 'kPa',       'color': '#5DCAA5', 'dec': 2},
     'P_2t':        {'label': 'P2t',          'unit': 'kPa',       'color': '#185FA5', 'dec': 2},
-    'P_25t':       {'label': 'P25t',         'unit': 'kPa',       'color': '#185FA5', 'dec': 2},
     'P_3t':        {'label': 'P3t',          'unit': 'kPa',       'color': '#D85A30', 'dec': 2},
     'P_4t':        {'label': 'P4t',          'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
     'P_45t':       {'label': 'P45t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
     'P_5t':        {'label': 'P5t',          'unit': 'kPa',       'color': '#7F77DD', 'dec': 2},
-    'P_7t':        {'label': 'P7t',          'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
     'P_9':         {'label': 'P9',           'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
-    'P_12t':       {'label': 'P12t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
-    'P_13t':       {'label': 'P13t',         'unit': 'kPa',       'color': '#A32D2D', 'dec': 2},
-    'P_19':        {'label': 'P19',          'unit': 'kPa',       'color': '#0F6E56', 'dec': 2},
 }
 
 # Estado interno del histórico
@@ -184,7 +174,8 @@ def update_telemetry_figure(data, selected, window_s=TLM_WINDOW_S):
         legend={'orientation': 'h',
                 'yanchor': 'bottom', 'y': 1.0,
                 'xanchor': 'left',   'x': 0,
-                'bgcolor': 'rgba(0,0,0,0)'},
+                'bgcolor': 'rgba(0,0,0,0)',
+                'font': {'size': 12, 'family': 'Share Tech Mono'}},
         xaxis={'range': [-window_s, 0]},
         yaxis={'autorange': True},      # ← se adapta al máximo de las trazas
         uirevision='static',
@@ -203,7 +194,7 @@ ENGINE_CONFIGS = {
         "color":    "#1a4d8f",
         # ── Sección 1: Condiciones de vuelo ──────────────────────────────────
         "sliders_vuelo": [
-            ("os_t0",   "T\u2080 [K]",    200,  325,   288,   1),
+            ("os_t0",   "T\u2080 [K]",    200,  325,   288.15,   1),
             ("os_p0",   "P\u2080 [kPa]",   20,  105,  101.325, 0.1),
             ("os_mach", "M\u2080",           0,  2.5,    0,   0.01),
         ],
@@ -238,8 +229,8 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turbojet + Postcombustor",
         "color":    "#b83232",
         "sliders_vuelo": [
-            ("ts_t0",   "T\u2080 [K]",    200,  325,   288,   1),
-            ("ts_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("ts_t0",   "T\u2080 [K]",    200,  325,   288.15,   1),
+            ("ts_p0",   "P\u2080 [kPa]",  20, 105, 101.325, 0.1),
             ("ts_mach", "M\u2080",          0,  2.5,   0,  0.01),
         ],
         "sliders_diseno": [
@@ -274,8 +265,8 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Flow Turbofan",
         "color":    "#1a6644",
         "sliders_vuelo": [
-            ("tf_t0",   "T\u2080 [K]",    200,  325,   288,   1),
-            ("tf_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("tf_t0",   "T\u2080 [K]",    200,  325,   288.15,   1),
+            ("tf_p0",   "P\u2080 [kPa]",  20, 105, 101.325, 0.1),
             ("tf_mach", "M\u2080",          0,  1.0,   0,  0.01),
         ],
         "sliders_diseno": [
@@ -316,36 +307,40 @@ ENGINE_CONFIGS = {
         "subtitle": "Single Spool Turboprop",
         "color":    "#9c4d00",
         "sliders_vuelo": [
-            ("tp_t0",   "T\u2080 [K]",    200,  325,   288,   1),
-            ("tp_p0",   "P\u2080 [kPa]",  20, 105, 101.3, 0.1),
+            ("tp_t0",   "T\u2080 [K]",    200,  325,   288.15,   1),
+            ("tp_p0",   "P\u2080 [kPa]",  20, 105, 101.325, 0.1),
             ("tp_mach", "M\u2080",          0,  0.7,  0,  0.01),
         ],
         "sliders_diseno": [
-            ("tp_tit",  "T\u2084t [K]",          800, 1700, 1500,  5),
-            ("tp_pi",   "\u03C0\u2082\u2083",       2,   30,   25, 0.1),
-            ("tp_G",    "G [kg/s]",                 5,  200,   90,  1),
-            ("tp_Wh",    "W\u2095 [kW]",       10, 2000,  200, 10),
-            ("tp_etam",  "\u03B7 mecanica",   0.5, 1, 1, 0.01),
+            ("tp_tit",  "T\u2084\u209C [K]",          800, 1700, 1550,  5),
+            ("tp_pi",   "\u03C0\u2082\u2083",       2,   30,   22, 0.1),
+            ("tp_G",    "G [kg/s]",                 5,  200,   44,  1),
+            ("tp_lam",  "\u03BB",               0.0,  0.5, 0.1, 0.01),
+            ("tp_etam",  "\u03B7\u2098",   0.5, 1, 0.94, 0.01),
+            ("tp_etah",  "\u03B7\u2095",     0.5, 1, 0.85, 0.01),
         ],
         "sliders_comp": [
-            ("tp_ec",    "\u03B7\u2082\u208b\u2083",  0.6, 1, 1.0,  0.01),
-            ("tp_ecc",   "\u03B7\u2083\u208b\u2084",     0.6, 1, 1, 0.01),
-            ("tp_ehpt",  "\u03B7\u2084\u208b\u2084\u2085",   0.6, 1, 1.0,  0.01),
-            ("tp_elpt",  "\u03B7\u2084\u2085\u208b\u2085",   0.6, 1, 1.0,  0.01),
+            ("tp_ec",    "\u03B7\u2082\u2083",              0.6, 1, 1,  0.01),
+            ("tp_ecc",   "\u03B7\u2083\u2084",              0.6, 1, 1,    0.01),
+            ("tp_ehpt",  "\u03B7\u2084\u208b\u2084\u2085", 0.6, 1, 1.0,  0.01),
+            ("tp_elpt",  "\u03B7\u2084\u2085\u208b\u2085", 0.6, 1, 1.0,  0.01),
         ],
         "engine_cls": sim.OneSpoolTurboprop,
         "runner": lambda p: sim.OneSpoolTurboprop().simulate(
             p["tp_t0"], p["tp_p0"] * 1000,
             p["tp_mach"], p["tp_G"], p["tp_pi"], p["tp_tit"],
-            p["tp_Wh"] * 1000, p["tp_etam"],
+            p["tp_lam"], p["tp_etam"], p.get("tp_etah", 0.85),
+            eta_dif=p.get("tp_edif", 1.0),
             eta_c=p["tp_ec"], eta_cc=p["tp_ecc"],
             eta_hpt=p["tp_ehpt"], eta_lpt=p["tp_elpt"],
+            eta_noz=p.get("tp_enoz", 1.0),
         ),
         "sweep_base": lambda p: {
-            "T_amb": p["tp_t0"], "P_amb": p["tp_p0"] * 1000,
+            "T_0": p["tp_t0"], "P_0": p["tp_p0"] * 1000,
             "mach":p["tp_mach"],  "G":p["tp_G"],
             "pi_23":p["tp_pi"],   "tit":p["tp_tit"],
-            "W_h":p["tp_Wh"]*1000, "eta_m":p["tp_etam"],
+            "lam":p["tp_lam"],    "eta_m":p["tp_etam"],
+            "eta_h":p.get("tp_etah", 0.85),
             "eta_c":p["tp_ec"], "eta_cc":p["tp_ecc"],
             "eta_hpt":p["tp_ehpt"], "eta_lpt":p["tp_elpt"],
         },
@@ -420,8 +415,22 @@ def _ax(title_text=None):
     d = dict(
         gridcolor=C["border"], gridwidth=0.8,
         linecolor=C["border2"], linewidth=1,
-        tickfont=dict(size=9,family=C["mono"],color=C["dim"]),
-        title_font=dict(size=10,family=C["mono"],color=C["dim"]),
+        tickfont=dict(size=12,family=C["mono"],color=C["dim"]),
+        title_font=dict(size=12,family=C["mono"],color=C["dim"]),
+        zeroline=True, zerolinecolor=C["border2"], zerolinewidth=1,
+    )
+    if title_text:
+        d["title_text"] = title_text
+    return d
+
+
+def _ax_lg(title_text=None):
+    """Como _ax pero con fuentes más grandes (equiv. 0.8vw en 1920px ≈ 15px)."""
+    d = dict(
+        gridcolor=C["border"], gridwidth=0.8,
+        linecolor=C["border2"], linewidth=1,
+        tickfont=dict(size=12, family=C["mono"], color=C["dim"]),
+        title_font=dict(size=12, family=C["mono"], color=C["dim"]),
         zeroline=True, zerolinecolor=C["border2"], zerolinewidth=1,
     )
     if title_text:
@@ -1736,6 +1745,7 @@ sim_screen = html.Div([
                     metric_card("Empuje específico",   "sp_thrust", "m/s", ""),
                     metric_card("Consumo específico", "SFC",      "g/KNs",  ""),
                     metric_card("Combustible",  "fuel",      "kg/s",   "warn"),
+                    
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
@@ -1744,6 +1754,10 @@ sim_screen = html.Div([
                     metric_card(["Rendimiento motor",       html.Span("", style={"fontFamily":"sans-serif"})], "eta_m",   "%", "eta-card"),
                     metric_card(["Rendimiento propulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_p",  "%", "eta-card"),
                     metric_card(["Rendimiento motopropulsor",   html.Span("", style={"fontFamily":"sans-serif"})], "eta_mp",  "%", "eta-card"),
+                    html.Div(
+                        metric_card("Potencia hélice", "P_helice", "kW", "good"),
+                        id="card-p-helice", style={"display":"none"}
+                    ),
                 ], style={"display":"flex","flexDirection":"column","gap":"3px",
                           "flex":"1","minWidth":"0"}),
 
@@ -1787,7 +1801,7 @@ sim_screen = html.Div([
                             id="tlm-summary",
                             children="Variables ▾",
                             style={"cursor":"pointer",
-                                   "fontSize":"10px",
+                                   "fontSize":"11px",
                                    "fontFamily":C["mono"],
                                    "color":C["text"],
                                    "padding":"3px 10px",
@@ -1810,7 +1824,7 @@ sim_screen = html.Div([
                                     "color":C["text"],"padding":"0px 0",
                                     "cursor":"pointer",
                                 },
-                                inputStyle={"margin":"0 0 0 0px","cursor":"pointer"},
+                                inputStyle={"margin":"0 5px 0 0px","cursor":"pointer"},
                             ),
                             style={"background":C["panel"],
                                    "border":f"1px solid {C['border']}",
@@ -2020,7 +2034,7 @@ def update_telemetry(_n, selected, data):
     if not data:
         # Aún no se ha calculado nada: figura vacía pero estilada
         fig = go.Figure().update_layout(**_plot_layout(""))
-        fig.update_xaxes(**_ax("t [s]"), range=[-60, 0])
+        fig.update_xaxes(**_ax_lg("t [s]"), range=[-60, 0])
         fig.update_yaxes(**_ax(), range=[0, 1800])
         return fig, f"Variables ({len(selected)}) ▾"
 
@@ -2081,6 +2095,8 @@ def update_labels(*vals):
     Output("m-eta_m",         "children"),
     Output("m-eta_p",       "children"),
     Output("m-eta_mp",       "children"),
+    Output("m-P_helice",       "children"),
+    Output("card-p-helice",    "style"),
     Output("graph-ts",           "figure"),
     Output("graph-gauge-thrust", "figure"),
     Output("graph-gauge-epr",    "figure"),
@@ -2097,6 +2113,7 @@ def update_labels(*vals):
     Input("eta-override-store",  "data"),
     *[Input(f"sl-{sid}", "value") for sid in ALL_SLIDER_IDS],
 )
+
 def run_simulation(engine_type, eta_overrides, *all_vals):
     if not engine_type:
         raise dash.exceptions.PreventUpdate
@@ -2125,7 +2142,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
                                              "fontSize":"10px","color":C["accent2"]})
         ef_blank = {"data":[],"layout":{"paper_bgcolor":C["panel"],
                     "plot_bgcolor":C["panel"],"margin":{"l":0,"r":0,"t":0,"b":0}}}
-        return ["—", "—", "—", "—", "—", "—", "—",
+        return ["—", "—", "—", "—", "—", "—", "—", "—", {"display":"none"},
                 ef, ef, ef, et, msg_str, {"display":"block"},
                 ef_blank, {"height":"100%","width":"100%","display":"none"},
                 None, {"display":"none"},
@@ -2138,20 +2155,23 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
 
     tit_val = r["Tt4_K"]
 
-    # Métricas
-    _V0      = r["V0"]
-    _Vjet    = r["V_jet"]
-    _G       = r["m_core"] + r["m_bypass"] # kg/s
-    _sp_thrust = r["sp_thrust"]  # N·s/kg = N / (kg/s)
+    # Métricas — sp_thrust puede no existir en turboprop legacy, proteger
+    _sp_thrust = r.get("sp_thrust", r.get("F_helice_kN", 0) * 1000 / max(r["m_core"], 1e-9))
+
+    # Potencia hélice solo para turboprop
+    _is_tp = engine_type == "OneSpoolTurboprop"
+    _P_h_kW = r.get("shaft_MW", 0.0)
+    p_helice_str   = f"{_P_h_kW:.1f}" if _is_tp else "—"
+    p_helice_style = {"display":"block"} if _is_tp else {"display":"none"}
 
     metrics = [
         f"{r['thrust_kN']:.2f}",
-        f"{r['sp_thrust']:.1f}",
+        f"{_sp_thrust:.1f}",
         f"{r['SFC']:.3f}",
         f"{r['fuel_kg_s']:.4f}",
-        f"{r['eta_m']:.1f}",
-        f"{r['eta_p']:.1f}",
-        f"{r['eta_mp']:.1f}",
+        f"{r.get('eta_m', r.get('eta_th', 0)):.1f}",
+        f"{r.get('eta_p', r.get('eta_prop', 0)):.1f}",
+        f"{r.get('eta_mp', r.get('eta_global', 0)):.1f}",
     ]
 
     # ── Diagrama T-s ──────────────────────────────────────────────────────
@@ -2248,9 +2268,10 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
             borderwidth=1, borderpad=3,
         )
     fig_ts.update_layout(**_plot_layout(""))
-    fig_ts.update_xaxes(**_ax("Entropía relativa, s [kJ/kg·K]"))
-    fig_ts.update_yaxes(**_ax("Temperatura, T [K]"))
+    fig_ts.update_xaxes(**_ax_lg("Entropía relativa, s [kJ/kg·K]"))
+    fig_ts.update_yaxes(**_ax_lg("Temperatura, T [K]"))
     fig_ts.update_layout(margin=dict(l=40, r=10, t=10, b=30))
+    
 
 
 
@@ -2311,8 +2332,12 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
     ]
     if engine_type == "OneSpoolTurboprop":
         table += [
-            tele_row(["F", html.Sub("helice",  style=SUB)], f"{r.get('F_helice_kN',0):.2f} kN","good"),
-            tele_row(["F", html.Sub("residual",style=SUB)], f"{r.get('F_resid_kN', 0):.2f} kN",""),
+            tele_row(["P", html.Sub("h",       style=SUB)], f"{r.get('shaft_MW',0)*1000:.1f} kW",  "good"),
+            tele_row(["W", html.Sub("eq",      style=SUB)], f"{r.get('W_eq_MW',0)*1000:.1f} kW",   ""),
+            tele_row(["C", html.Sub("E",       style=SUB)], f"{r.get('CE_gMJ',0):.2f} g/MJ",       ""),
+            tele_row(["F", html.Sub("hélice",  style=SUB)], f"{r.get('F_helice_kN',0):.2f} kN",    "good"),
+            tele_row(["F", html.Sub("residual",style=SUB)], f"{r.get('F_resid_kN', 0):.2f} kN",    ""),
+            tele_row(["V", html.Sub("tb",      style=SUB)], f"{r.get('Vtb',0):.1f} m/s",           ""),
         ]
 
     # ── Alerta TIT ────────────────────────────────────────────────────────
@@ -2455,7 +2480,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
 
         # ── Valor numérico ─────────────────────────────────────────────
         annotations.append(dict(
-            x=CX, y=CY - 0.19,
+            x=CX, y=CY - 0.30,
             text=f"{value:.1f}{suffix}",
             showarrow=False,
             font=dict(size=13, family=C["mono"], color=C["accent"])))
@@ -2537,6 +2562,7 @@ def run_simulation(engine_type, eta_overrides, *all_vals):
         tlm_data[tlm_P_id] = float(P_active[i_active])
 
     return [metrics[0], metrics[1], metrics[2], metrics[3], metrics[4], metrics[5], metrics[6],
+            p_helice_str, p_helice_style,
             fig_ts, fig_gauge_thrust, fig_gauge_epr,
             table, alert_msg, alert_style,
             onespool_fig, onespool_style, other_children, other_style,
@@ -2742,6 +2768,37 @@ col = C["accent"]
     Input("diag-OneSpoolEngine", "clickData"),
     prevent_initial_call=True,
 )
+def on_comp_click(clickData):
+    if not clickData:
+        raise dash.exceptions.PreventUpdate
+    try:
+        cd = clickData["points"][0]["customdata"]
+        zone_id, label, station, t_str, p_str = cd[0], cd[1], cd[2], cd[3], cd[4]
+    except Exception:
+        raise dash.exceptions.PreventUpdate
+    return f"ESTACIÓN {station} — {label}  |  T = {t_str}  |  P = {p_str}"
+
+# ── Toggle paneles de rendimiento ────────────────────────────────────────────
+for _eid in ENGINE_CONFIGS:
+    @app.callback(
+        Output(f"eta-panel-{_eid}", "style"),
+        Output(f"btn-eta-toggle-{_eid}", "children"),
+        Input(f"btn-eta-toggle-{_eid}", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _toggle_eta(n, eid=_eid):
+        if n % 2 == 1:
+            return ({"display":"block","background":C["panel2"],
+                     "border":f"1px solid {C['border']}",
+                     "paddingTop":"5px","paddingLeft":"10px",
+                     "paddingRight":"10px","marginTop":"4px"}, "▴")
+        return ({"display":"none","background":C["panel2"],
+                 "border":f"1px solid {C['border']}",
+                 "paddingTop":"5px","paddingLeft":"10px",
+                 "paddingRight":"10px","marginTop":"4px"}, "▾")
+    
+if __name__ == "__main__":
+    app.run(debug=True)
 def on_comp_click(clickData):
     if not clickData:
         raise dash.exceptions.PreventUpdate

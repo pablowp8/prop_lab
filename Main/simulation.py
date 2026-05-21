@@ -96,8 +96,8 @@ class CombustionChamber(Component):
         return t_out, p_out, s, FAR
 
 class Turbine(Component):
-    def calculate(self, t_in, p_in, s_in, required_work, G):
-        t_out = t_in - (required_work / self.cp)
+    def calculate(self, t_in, p_in, s_in, required_work, G, FAR):
+        t_out = t_in - (required_work / ((1+FAR)*self.cp))
         p_out = p_in * ((1 - (1/self.eta)*(1-t_out/t_in)) ** (self.gamma / (self.gamma - 1)))
 
         s = s_in + self.cp * np.log(t_out / t_in) - self.R * np.log(p_out / p_in)
@@ -125,10 +125,10 @@ class Postcombustor(Component):
 
 class Nozzle(Component):
     def calculate(self, t_in, p_in, s_in, t_a, p_a, G, conf='CON'):
+        param_pressure = p_in / p_a
+        param_gamma    = (2 / (self.gamma + 1)) ** (self.gamma / (self.gamma - 1))
+        g = self.gamma
         if conf == 'CON':
-            param_pressure = p_in / p_a
-            param_gamma    = (2 / (self.gamma + 1)) ** (self.gamma / (self.gamma - 1))
-            g = self.gamma
             if param_pressure <= param_gamma:       # adaptada
                 p_out = p_a
                 t_out = t_in * (1 / param_pressure) ** ((self.gamma - 1) / self.gamma)
@@ -144,11 +144,12 @@ class Nozzle(Component):
                 exp = (g + 1) / (2 * (g - 1))
                 A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) * ((g + 1) / 2)**exp
         else:   # CON-DIV adaptada
-            param_pressure = p_in / p_a
             p_out = p_a
             t_out = t_in * (1 / param_pressure) ** ((self.gamma - 1) / self.gamma)
             mach  = math.sqrt((2 / (self.gamma - 1)) * (param_pressure ** ((self.gamma - 1) / self.gamma) - 1))
-
+            f_M = mach * (1 + (g - 1) / 2 * mach**2)**(-(g + 1) / (2 * (g - 1)))
+            A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) / f_M
+            
         v_out = mach * math.sqrt(self.gamma * self.R * t_out)
 
         s = s_in
@@ -182,19 +183,48 @@ def _perf(V_jet, V0, m_dot, FAR, opr, A_8, A_18=0,
           V_bypass=0.0, m_bypass=0.0, shaft_W=0.0,
           P_9=0.0, P_19=0.0, Tt0=0.0, Tt3=0.0, Tt4=0.0, Tt5=0.0,
           Pt0_kPa=0.0, Pt3_kPa=0.0, P0_kPa=0.0):
-    """Calcula el dict de actuaciones comunes a todos los motores."""
-    F_core   = m_dot    * ((1 + FAR) * V_jet    - V0) + A_8*(P_9 - Pt0_kPa*1000 )
-    F_bypass = m_bypass * (V_bypass  - V0) + A_18*(P_19 - Pt0_kPa*1000 )
-    F_total  = F_core + F_bypass
     
-    sp_thrust = F_total/m_dot
-    fuel_kg_s = m_dot * FAR   # FAR es la fracción de combustible
-    SFC       = fuel_kg_s* 1e6/F_total # g/kNs
-    TSFC_mg   = SFC * 1e6 / 9.81
+    # --- Presión ambiente estática [Pa] -----------------------------------
+    P0 = P0_kPa * 1000.0
 
-    eta_m    = 0.5*(m_dot*(V_jet**2-V0**2) + m_bypass*(V_bypass**2-V0**2))/(fuel_kg_s*LHV)
-    eta_mp   = F_total*V0/(fuel_kg_s*LHV)  
-    eta_p    = eta_mp/eta_m
+    # --- Gastos ------------------------------------------------------------
+    m_g_core  = m_dot * (1.0 + FAR)     # gasto de gases del primario
+    m_air_tot = m_dot + m_bypass        # gasto total de aire (sin combustible)
+    fuel_kg_s = m_dot * FAR
+
+    # --- Empuje (términos de presión = 0 si la tobera está adaptada) ------
+    F_core   = m_g_core * V_jet    - m_dot    * V0 + A_8  * (P_9  - P0)
+    F_bypass = m_bypass * V_bypass - m_bypass * V0 + A_18 * (P_19 - P0)
+    F_total  = F_core + F_bypass
+
+    # --- Velocidades equivalentes (= V_jet/V_bypass si adaptadas) ---------
+    V_eq_core   = V_jet + A_8 * (P_9 - P0) / m_g_core
+    V_eq_bypass = (V_bypass + A_18 * (P_19 - P0) / m_bypass
+                   if m_bypass > 0.0 else 0.0)
+
+    # --- Potencias ---------------------------------------------------------
+    # Potencia calorífica aportada por el combustible
+    P_cal = fuel_kg_s * LHV
+
+    # Potencia útil = empuje · velocidad de vuelo
+    P_util = F_total * V0
+
+    # Potencia mecánica neta = incremento de energía cinética del fluido
+    #   (usando V_eq para englobar el término de presión residual)
+    P_mec = 0.5 * (m_g_core  * V_eq_core**2
+                 + m_bypass  * V_eq_bypass**2
+                 - m_air_tot * V0**2)
+
+    # --- Rendimientos ------------------------------------------------------
+    eta_m  = P_mec  / P_cal      # motor       : química -> cinética del chorro
+    eta_mp = P_util / P_cal      # motopropulsor: química -> propulsiva
+    eta_p  = P_util / P_mec      # propulsor   : cinética -> propulsiva
+    # se cumple eta_mp = eta_m * eta_p
+
+    # --- Actuaciones -------------------------------------------------------
+    sp_thrust = F_total / m_air_tot          # empuje específico [N/(kg/s)]
+    SFC       = fuel_kg_s * 1e6 / F_total    # g/(kN·s)
+    TSFC_mg   = SFC * 1e6 / 9.81
         
 
     return {
@@ -273,7 +303,7 @@ class OneSpoolEngine:
         T_2t, P_2t, S_2         = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c    = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR))
+        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR), FAR)
         T_9, P_9, S_9, V_jet, A_8    = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
@@ -332,7 +362,7 @@ class OneSpoolEngine_PC:
         T_2t, P_2t, S_2              = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t, P_3t, S_3, W_c         = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR))
+        T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR), FAR)
         T_7t, P_7t, S_7, A_8         = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G*(1+FAR))
         T_9, P_9, S_9, V_jet, A_8pc  = self.nozz.calculate(T_7t, P_7t, S_7, T_0, P_0, G*(1+FAR))
 
@@ -388,8 +418,8 @@ class SingleFlowTurbofan:
         T_12t, P_12t, S_12 = T_2t, P_2t, S_2
         T_13t, P_13t, S_13, W_fan   = self.fan.calculate(T_12t,  P_12t, S_12, pi_fan)
         T_4t,  P_4t, S_4, FAR           = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR))
-        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_fan * bpr, G*(1+FAR))
+        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR), FAR)
+        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_fan * bpr, G*(1+FAR), FAR)
         T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t,  P_5t,  S_5, T_0, P_0, G*(1+FAR))
         T_19,  P_19,  S_19,   V_bypass, A_18 = self.nozz.calculate(T_13t, P_13t, S_13, T_0, P_0, G*bpr)
 
@@ -432,7 +462,7 @@ class OneSpoolTurboprop:
         self.pc         = Postcombustor()
         self.nozz       = Nozzle()
 
-    def simulate(self, T_0, P_0, mach, G, pi_23, tit, W_h, eta_m,
+    def simulate(self, T_0, P_0, mach, G, pi_23, tit, lam, eta_m, eta_h=1.0,
                  eta_dif=None, eta_c=None, eta_cc=None,
                  eta_hpt=None, eta_lpt=None, eta_noz=None):
         """
@@ -452,8 +482,13 @@ class OneSpoolTurboprop:
         T_2t,  P_2t, S_2           = self.dif.calculate(T_0, P_0, S_0, mach)
         T_3t,  P_3t, S_3, W_c     = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t,  P_4t, S_4, FAR      = self.cc.calculate(T_3t, P_3t, S_3, tit)
-        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR))
-        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_h * eta_m, G*(1+FAR))
+        T_45t, P_45t, S_45, A_4     = self.hp_turbine.calculate(T_4t,  P_4t,  S_4, W_c, G*(1+FAR), FAR)
+
+        # Vtb   = math.sqrt(2 * CP * T_45t * (1 - (P_0 / P_45t)**((g-1)/g)))
+        # V_jet = math.sqrt(lam) * Vtb 
+        # W_lpt_spec = 0.5 * (Vtb**2 - V_jet**2)
+
+        T_5t,  P_5t, S_5, A_45     = self.lp_turbine.calculate(T_45t, P_45t, S_45, W_c, G*(1+FAR), FAR)
         T_9,   P_9, S_9, V_jet, A_8   = self.nozz.calculate(T_5t, P_5t, S_5, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
@@ -466,7 +501,7 @@ class OneSpoolTurboprop:
 
         fuel_kg_s  = G * FAR
         F_residual = G * (V_jet - V0)
-        F_helice   = W_h * eta_m / max(V0, 1.0)
+        F_helice   = F_residual
         F_total    = F_helice + F_residual
 
         eta_th = max(0.0, 1 - 1 / max(pi_23, 1.001) ** ((GAMMA - 1) / GAMMA))
@@ -475,11 +510,12 @@ class OneSpoolTurboprop:
             "thrust_kN":   F_total / 1000,
             "F_helice_kN": F_helice / 1000,
             "F_resid_kN":  F_residual / 1000,
+            "sp_thrust":   F_total/G,
             "SFC":         fuel_kg_s / max(abs(F_total), 1) * 3600,
             "TSFC_mg":     (fuel_kg_s / max(abs(F_total), 1) * 3600) * 1e6 / 9.81,
-            "eta_th":      eta_th * 100,
-            "eta_prop":    0.0,
-            "eta_global":  0.0,
+            "eta_m":      eta_th * 100,
+            "eta_p":    0.0,
+            "eta_mp":  0.0,
             "fuel_kg_s":   fuel_kg_s,
             "FAR":         FAR,
             "V_jet":       V_jet,
@@ -487,7 +523,7 @@ class OneSpoolTurboprop:
             "V0":          V0,
             "m_core":      G,
             "m_bypass":    0.0,
-            "shaft_MW":    W_h * eta_m / 1e6,
+            "shaft_MW":    0,
             "EGT":         T_5t * 0.88,
             "T0_K":        T_2t,
             "Tt3_K":       T_3t,
@@ -561,14 +597,14 @@ def _engine_class(engine_type):
 if __name__ == "__main__":
     T, P = isa_atmosphere(0, 15)
 
-    r1 = OneSpoolEngine().simulate(T, P, 0, 30, 10, 1400, eta_c=1, eta_t=1)
+    r1 = OneSpoolEngine().simulate(223.15, 26418, 0.8, 50, 12, 1450, eta_c=1, eta_t=1)
     print(f"Monoeje   — F={r1['thrust_kN']:.2f} kN  TSFC={r1['TSFC_mg']:.2f} mg/Ns")
 
-    r2 = OneSpoolEngine_PC().simulate(T, P, 0, 30, 10, 1400, 1700)
+    r2 = OneSpoolEngine_PC().simulate(216.65, 22614, 1.6, 70, 10, 1500, 2000)
     print(f"Postcombustor     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
 
-    r3 = SingleFlowTurbofan().simulate(T, P, 0, 90, 25, 1500, 1.4, 0.8)
+    r3 = SingleFlowTurbofan().simulate(T, P, 0.7, 90, 25, 1500, 1.4, 0.8)
     print(f"Turbofan  — F={r3['thrust_kN']:.2f} kN  TSFC={r3['TSFC_mg']:.2f} mg/Ns")
 
-    r4 = OneSpoolTurboprop().simulate(T, P, 0, 90, 25, 1500, 200_000, 0.7)
+    r4 = OneSpoolTurboprop().simulate(T, P, 0.7, 90, 25, 1500, 200_000, 0.7)
     print(f"Turboprop — F={r4['thrust_kN']:.2f} kN  TSFC={r4['TSFC_mg']:.2f} mg/Ns")

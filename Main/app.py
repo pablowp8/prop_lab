@@ -379,8 +379,8 @@ def make_slider(sid, label, mn, mx, dfl, stp):
         html.Div([
             html.Span(label, style={"fontSize":"0.9vw","color":C["accent"],   # Variable
                                     "fontFamily":C["mono"]}),
-            html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],  # Valor numérico
-                                               "fontSize":"0.9vw","color":C["accent"]}),
+            # html.Span(id=f"val-{sid}", style={"fontFamily":C["mono"],  # Valor numérico
+            #                                    "fontSize":"0.9vw","color":C["accent"]}),
         ], style={"display":"flex","justifyContent":"space-between","marginBottom":"-6px"}),
         dcc.Slider(id=f"sl-{sid}", min=mn, max=mx, value=dfl, step=stp,
                    marks=None, tooltip={"always_visible":False}, className="mb-1"),
@@ -2807,4 +2807,6 @@ for _eid in ENGINE_CONFIGS:
                  "paddingRight":"10px","marginTop":"4px"}, "▾")
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    app.run(debug=os.environ.get("DASH_DEBUG", "false").lower() == "true",
+            host="0.0.0.0", port=int(os.environ.get("PORT", 8050)))

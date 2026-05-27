@@ -92,7 +92,7 @@ class CombustionChamber(Component):
 
         s = s_in + self.cp * np.log(t_out / t_in) - self.R * np.log(p_out / p_in)
         
-        FAR = (self.cp * t_out - self.cp * t_in) / (self.eta * self.L  - self.cp * t_out - self.cp*t_in)
+        FAR = (self.cp * t_out - self.cp * t_in) / (self.eta * self.L  - self.cp * t_out)
         return t_out, p_out, s, FAR
 
 class Turbine(Component):
@@ -108,19 +108,24 @@ class Turbine(Component):
 
         return t_out, p_out, s, A
 class Postcombustor(Component):
-    def calculate(self, t_in, p_in, s_in, t_pc, G):
+    def calculate(self, t_in, p_in, s_in, t_pc, G, FAR):
 
         g = self.gamma
 
         t_out = t_pc
         p_out = p_in
+        
+        FAR_ab = (self.cp * t_out - self.cp * t_in) / (self.eta * self.L  - self.cp * t_out)
+        G = G*(1+FAR_ab)
+        
+        FAR = FAR + FAR_ab*(1 + FAR)
 
         s = s_in + self.cp * np.log(t_out / t_in) - self.R * np.log(p_out / p_in)
 
         exp = (g + 1) / (2 * (g - 1))
         A = (G * t_in**0.5 / p_in) * ((self.R / g)**0.5) * ((g + 1) / 2)**exp
 
-        return t_out, p_out, s, A
+        return t_out, p_out, s, A, FAR
 
 
 class Nozzle(Component):
@@ -363,7 +368,7 @@ class OneSpoolEngine_PC:
         T_3t, P_3t, S_3, W_c         = self.comp.calculate(T_2t, P_2t, S_2, pi_23)
         T_4t, P_4t, S_4, FAR         = self.cc.calculate(T_3t, P_3t, S_3, tit)
         T_5t, P_5t, S_5, A_4         = self.turb.calculate(T_4t, P_4t, S_4, W_c, G*(1+FAR), FAR)
-        T_7t, P_7t, S_7, A_8         = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G*(1+FAR))
+        T_7t, P_7t, S_7, A_8, FAR    = self.pc.calculate(T_5t, P_5t, S_5, t_pc, G*(1+FAR), FAR)
         T_9, P_9, S_9, V_jet, A_8pc  = self.nozz.calculate(T_7t, P_7t, S_7, T_0, P_0, G*(1+FAR))
 
         df = _fill_df(
@@ -603,7 +608,7 @@ if __name__ == "__main__":
     r2 = OneSpoolEngine_PC().simulate(216.65, 22614, 1.6, 70, 10, 1500, 2000)
     print(f"Postcombustor     — F={r2['thrust_kN']:.2f} kN  TSFC={r2['TSFC_mg']:.2f} mg/Ns")
 
-    r3 = SingleFlowTurbofan().simulate(T, P, 0.7, 90, 25, 1500, 1.4, 0.8)
+    r3 = SingleFlowTurbofan().simulate(216.65, 22614, 0.85, 40, 30, 1500, 1.6, 5)
     print(f"Turbofan  — F={r3['thrust_kN']:.2f} kN  TSFC={r3['TSFC_mg']:.2f} mg/Ns")
 
     r4 = OneSpoolTurboprop().simulate(T, P, 0.7, 90, 25, 1500, 200_000, 0.7)
